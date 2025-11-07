@@ -7,13 +7,23 @@ export const FUNDS_CSV_URL =
 const sanitizeString = (value: string | undefined): string | undefined => {
   if (!value) return undefined
   const trimmed = value.trim()
-  return trimmed.length ? trimmed : undefined
+  if (!trimmed.length) return undefined
+
+  const normalized = trimmed.replace(/[.,]/g, '').toLowerCase()
+  if (['n/a', 'na', 'not available', 'none', '-', '--', 'tbd', ''].includes(normalized)) {
+    return undefined
+  }
+
+  return trimmed
 }
 
 const parseNumber = (value: string | undefined): number | null => {
   const source = sanitizeString(value)
   if (!source) return null
-  const cleaned = source.replace(/[, ]+/g, '')
+  const cleaned = source
+    .replace(/[, ]+/g, '')
+    .replace(/\b(tzs|bn|billion|millions?)\b/gi, '')
+    .replace(/[^\d.+-]/g, '')
   const parsed = Number.parseFloat(cleaned)
   return Number.isFinite(parsed) ? parsed : null
 }
@@ -81,8 +91,10 @@ export const aggregateByManager = (funds: FundRecord[]): ManagerAggregate[] => {
     manager: string
     totalAumBn: number
     fundCount: number
-    returnSum: number
-    returnCount: number
+    weightedReturnSum: number
+    weightTotal: number
+    fallbackReturnSum: number
+    fallbackReturnCount: number
   }
 
   const aggregates = new Map<string, AggregateAccumulator>()
@@ -91,17 +103,26 @@ export const aggregateByManager = (funds: FundRecord[]): ManagerAggregate[] => {
     const manager = fund.manager
     if (!manager) return
 
-    const entry = aggregates.get(manager)
     const aum = fund.currentAumBn ?? 0
     const oneYearReturn = fund.oneYearReturn
+    const weight = aum > 0 ? aum : 0
 
+    const entry = aggregates.get(manager)
     if (!entry) {
       aggregates.set(manager, {
         manager,
         totalAumBn: aum,
         fundCount: 1,
-        returnSum: oneYearReturn ?? 0,
-        returnCount: oneYearReturn === null || oneYearReturn === undefined ? 0 : 1,
+        weightedReturnSum:
+          oneYearReturn !== null && oneYearReturn !== undefined && weight > 0
+            ? oneYearReturn * weight
+            : 0,
+        weightTotal:
+          oneYearReturn !== null && oneYearReturn !== undefined && weight > 0 ? weight : 0,
+        fallbackReturnSum:
+          oneYearReturn !== null && oneYearReturn !== undefined ? oneYearReturn : 0,
+        fallbackReturnCount:
+          oneYearReturn !== null && oneYearReturn !== undefined ? 1 : 0,
       })
       return
     }
@@ -109,8 +130,12 @@ export const aggregateByManager = (funds: FundRecord[]): ManagerAggregate[] => {
     entry.totalAumBn += aum
     entry.fundCount += 1
     if (oneYearReturn !== null && oneYearReturn !== undefined) {
-      entry.returnSum += oneYearReturn
-      entry.returnCount += 1
+      if (weight > 0) {
+        entry.weightedReturnSum += oneYearReturn * weight
+        entry.weightTotal += weight
+      }
+      entry.fallbackReturnSum += oneYearReturn
+      entry.fallbackReturnCount += 1
     }
   })
 
@@ -119,7 +144,12 @@ export const aggregateByManager = (funds: FundRecord[]): ManagerAggregate[] => {
       manager: entry.manager,
       totalAumBn: entry.totalAumBn,
       fundCount: entry.fundCount,
-      averageOneYearReturn: entry.returnCount ? entry.returnSum / entry.returnCount : null,
+      averageOneYearReturn:
+        entry.weightTotal > 0
+          ? entry.weightedReturnSum / entry.weightTotal
+          : entry.fallbackReturnCount
+            ? entry.fallbackReturnSum / entry.fallbackReturnCount
+            : null,
     }))
     .sort((a, b) => b.totalAumBn - a.totalAumBn)
 }

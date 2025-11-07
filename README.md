@@ -14,6 +14,10 @@ interactive views for AUM distribution and performance.
 - Presents a sortable-friendly fund table with key operational details and deep links to fund and
   manager resources.
 
+## Live demo
+
+- https://gideonamani.github.io/tzcis-dashboard/
+
 ## Getting started
 
 ```bash

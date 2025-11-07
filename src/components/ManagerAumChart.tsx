@@ -35,7 +35,13 @@ const ManagerAumChart = ({ data }: ManagerAumChartProps) => (
             cursor={{ fill: 'rgba(59,130,246,0.08)' }}
             formatter={(value: number) => [formatBn(value), 'Current AUM']}
           />
-          <Bar dataKey="totalAumBn" fill="#2563eb" radius={[6, 6, 0, 0]} />
+          <Bar
+            dataKey="totalAumBn"
+            fill="#2563eb"
+            radius={[6, 6, 0, 0]}
+            activeBar={{ fill: '#1d4ed8' }}
+            animationDuration={600}
+          />
         </BarChart>
       </ResponsiveContainer>
     </div>

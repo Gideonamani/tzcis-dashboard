@@ -59,6 +59,7 @@ const ReturnsChart = ({ data }: ReturnsChartProps) => (
               const manager = fund.manager ? ` · ${fund.manager}` : ''
               return `${label}${manager}`
             }}
+            contentStyle={{ borderRadius: 12, borderColor: '#cbd5f5', padding: 12 }}
           />
           <Legend verticalAlign="top" height={36} />
           <Bar
@@ -66,15 +67,18 @@ const ReturnsChart = ({ data }: ReturnsChartProps) => (
             name="1-year return"
             fill="#10b981"
             radius={[6, 6, 0, 0]}
+            activeBar={{ fill: '#059669' }}
+            animationDuration={600}
           />
           <Line
             type="monotone"
             dataKey="threeYearCagr"
             name="3-year CAGR"
             stroke="#0ea5e9"
-            strokeWidth={2}
-            dot={{ r: 4 }}
-            activeDot={{ r: 6 }}
+            strokeWidth={2.5}
+            dot={{ r: 4, stroke: '#0f172a', strokeWidth: 1 }}
+            activeDot={{ r: 6, strokeWidth: 0, fill: '#0284c7' }}
+            animationDuration={500}
           />
         </ComposedChart>
       </ResponsiveContainer>

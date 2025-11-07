@@ -5,6 +5,7 @@ import ManagerAumChart from './components/ManagerAumChart'
 import ReturnsChart from './components/ReturnsChart'
 import FundsTable from './components/FundsTable'
 import ManagerFilter from './components/ManagerFilter'
+import Loader from './components/Loader'
 import { aggregateByManager, fetchFundData, FUNDS_CSV_URL } from './services/fundData'
 import type { FundRecord } from './types'
 
@@ -163,9 +164,7 @@ function App() {
         />
       </section>
 
-      {loading ? (
-        <div className="dashboard__state">Loading fund data…</div>
-      ) : null}
+      {loading ? <Loader message="Loading fund data…" /> : null}
 
       {error ? (
         <div className="dashboard__state dashboard__state--error">
