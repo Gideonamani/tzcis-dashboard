@@ -13,6 +13,10 @@ const ManagerAumChart = lazy(() => import('./components/ManagerAumChart'))
 const ReturnsChart = lazy(() => import('./components/ReturnsChart'))
 const NavTrendChart = lazy(() => import('./components/NavTrendChart'))
 const NavPriceSpreadChart = lazy(() => import('./components/NavPriceSpreadChart'))
+const AumBreakdownChart = lazy(() => import('./components/AumBreakdownChart'))
+const PerformanceScatterPlot = lazy(() => import('./components/PerformanceScatterPlot'))
+
+const AUM_BREAKDOWN_COLORS = ['#2563eb', '#0ea5e9', '#10b981', '#f97316', '#a855f7', '#f43f5e']
 
 const ChartFallback = ({ title, helper }: { title: string; helper?: string }) => (
   <div className="panel panel--loading">
@@ -163,6 +167,51 @@ function App() {
     [filteredFunds],
   )
 
+  const aumBreakdownData = useMemo(() => {
+    if (!managerAggregates.length) return []
+    const total = managerAggregates.reduce((sum, entry) => sum + entry.totalAumBn, 0)
+    if (!total) return []
+
+    const primarySlices = managerAggregates.slice(0, 5).map((entry, index) => ({
+      name: entry.manager,
+      value: entry.totalAumBn,
+      percentage: (entry.totalAumBn / total) * 100,
+      color: AUM_BREAKDOWN_COLORS[index % AUM_BREAKDOWN_COLORS.length],
+    }))
+
+    const otherValue = managerAggregates.slice(5).reduce((sum, entry) => sum + entry.totalAumBn, 0)
+    if (otherValue > 0) {
+      primarySlices.push({
+        name: 'Other managers',
+        value: otherValue,
+        percentage: (otherValue / total) * 100,
+        color: '#94a3b8',
+      })
+    }
+    return primarySlices
+  }, [managerAggregates])
+
+  const performanceScatterData = useMemo(() => {
+    const eligible = filteredFunds
+      .filter(
+        (fund) =>
+          fund.oneYearReturn !== null &&
+          fund.oneYearReturn !== undefined &&
+          fund.threeYearCagr !== null &&
+          fund.threeYearCagr !== undefined,
+      )
+      .map((fund) => ({
+        fund: fund.fund,
+        manager: fund.manager ?? undefined,
+        oneYearReturn: fund.oneYearReturn as number,
+        threeYearCagr: fund.threeYearCagr as number,
+        currentAumBn: Math.max(fund.currentAumBn ?? 0.2, 0.2),
+      }))
+      .sort((a, b) => b.currentAumBn - a.currentAumBn)
+
+    return eligible.slice(0, 24)
+  }, [filteredFunds])
+
   const returnsSeries = useMemo(() => {
     const sortedByAum = [...filteredFunds].sort(
       (a, b) => (b.currentAumBn ?? 0) - (a.currentAumBn ?? 0),
@@ -176,6 +225,16 @@ function App() {
         (a, b) => (b.currentAumBn ?? 0) - (a.currentAumBn ?? 0),
       ),
     [filteredFunds],
+  )
+
+  const topAumDetailRows = useMemo(
+    () =>
+      tableData.slice(0, 4).map((fund) => ({
+        fund: fund.fund,
+        manager: fund.manager ?? 'n/a',
+        currentAumBn: fund.currentAumBn ?? null,
+      })),
+    [tableData],
   )
 
   const navSnapshots = useMemo<NavSnapshot[]>(() => {
@@ -296,7 +355,38 @@ function App() {
       {showContent ? (
         <>
           <section className="metrics-grid">
-            <MetricCard title="Total AUM" value={summaryMetrics.totalAum} />
+            <MetricCard
+              title="Total AUM"
+              value={summaryMetrics.totalAum}
+              detailContent={
+                topAumDetailRows.length ? (
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Fund</th>
+                        <th>Manager</th>
+                        <th style={{ textAlign: 'right' }}>AUM (TZS bn)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {topAumDetailRows.map((row) => (
+                        <tr key={row.fund}>
+                          <td>{row.fund}</td>
+                          <td>{row.manager}</td>
+                          <td style={{ textAlign: 'right' }}>
+                            {row.currentAumBn === null
+                              ? 'n/a'
+                              : row.currentAumBn.toLocaleString('en-US', {
+                                  maximumFractionDigits: row.currentAumBn < 10 ? 2 : 1,
+                                })}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : undefined
+              }
+            />
             <MetricCard title="Tracked funds" value={summaryMetrics.fundCount} />
             <MetricCard title="Average 1-year return" value={summaryMetrics.averageOneYearReturn} />
             <MetricCard
@@ -311,6 +401,15 @@ function App() {
             </Suspense>
             <Suspense fallback={<ChartFallback title="Total Return by Fund" helper="1-year bar · 3-year CAGR line" />}>
               <ReturnsChart data={returnsSeries} />
+            </Suspense>
+          </section>
+
+          <section className="charts-grid insights-grid">
+            <Suspense fallback={<ChartFallback title="AUM concentration" helper="Top managers" />}>
+              <AumBreakdownChart data={aumBreakdownData} />
+            </Suspense>
+            <Suspense fallback={<ChartFallback title="Return landscape" helper="Scatter" />}>
+              <PerformanceScatterPlot data={performanceScatterData} />
             </Suspense>
           </section>
 
