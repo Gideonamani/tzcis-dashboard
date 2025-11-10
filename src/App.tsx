@@ -5,6 +5,7 @@ import FundsTable from './components/FundsTable'
 import ManagerFilter from './components/ManagerFilter'
 import Loader from './components/Loader'
 import NavSnapshotGrid from './components/NavSnapshotGrid'
+import Modal from './components/Modal'
 import { aggregateByManager, fetchFundData, FUNDS_CSV_URL } from './services/fundData'
 import { fetchNavSeries } from './services/navData'
 import type { FundNavSeries, FundRecord, NavSnapshot } from './types'
@@ -37,6 +38,7 @@ function App() {
   const [navSeries, setNavSeries] = useState<FundNavSeries[]>([])
   const [navLoading, setNavLoading] = useState(true)
   const [navError, setNavError] = useState<string | null>(null)
+  const [expandedPanel, setExpandedPanel] = useState<null | 'aum-concentration'>(null)
 
   useEffect(() => {
     let ignore = false
@@ -211,6 +213,20 @@ function App() {
 
     return eligible.slice(0, 24)
   }, [filteredFunds])
+
+  const aumBreakdownTableData = useMemo(() => {
+    const total = managerAggregates.reduce((sum, entry) => sum + entry.totalAumBn, 0)
+    if (!total) return []
+    return managerAggregates
+      .map((entry) => ({
+        manager: entry.manager,
+        aum: entry.totalAumBn,
+        share: (entry.totalAumBn / total) * 100,
+        fundCount: entry.fundCount,
+        averageOneYearReturn: entry.averageOneYearReturn,
+      }))
+      .sort((a, b) => b.aum - a.aum)
+  }, [managerAggregates])
 
   const returnsSeries = useMemo(() => {
     const sortedByAum = [...filteredFunds].sort(
@@ -406,7 +422,10 @@ function App() {
 
           <section className="charts-grid insights-grid">
             <Suspense fallback={<ChartFallback title="AUM concentration" helper="Top managers" />}>
-              <AumBreakdownChart data={aumBreakdownData} />
+              <AumBreakdownChart
+                data={aumBreakdownData}
+                onExpand={aumBreakdownData.length ? () => setExpandedPanel('aum-concentration') : undefined}
+              />
             </Suspense>
             <Suspense fallback={<ChartFallback title="Return landscape" helper="Scatter" />}>
               <PerformanceScatterPlot data={performanceScatterData} />
@@ -467,6 +486,52 @@ function App() {
           AUM, 1-year returns, and longer-term performance.
         </p>
       </footer>
+
+      {expandedPanel === 'aum-concentration' ? (
+        <Modal
+          title="AUM concentration"
+          subtitle="Top managers by share"
+          onClose={() => setExpandedPanel(null)}
+        >
+          <div className="modal__grid">
+            <div className="modal__chart">
+              <AumBreakdownChart data={aumBreakdownData} height={420} />
+            </div>
+            <div className="modal__table-wrapper">
+              <table className="modal-table">
+                <thead>
+                  <tr>
+                    <th>Manager</th>
+                    <th className="numeric-col">AUM (TZS bn)</th>
+                    <th className="numeric-col">Share</th>
+                    <th className="numeric-col">Funds</th>
+                    <th className="numeric-col">Avg 1yr</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {aumBreakdownTableData.map((row) => (
+                    <tr key={row.manager}>
+                      <td>{row.manager}</td>
+                      <td className="numeric-col">
+                        {row.aum.toLocaleString('en-US', {
+                          maximumFractionDigits: row.aum < 10 ? 2 : 1,
+                        })}
+                      </td>
+                      <td className="numeric-col">{row.share.toFixed(1)}%</td>
+                      <td className="numeric-col">{row.fundCount}</td>
+                      <td className="numeric-col">
+                        {row.averageOneYearReturn === null || row.averageOneYearReturn === undefined
+                          ? 'n/a'
+                          : `${row.averageOneYearReturn.toFixed(1)}%`}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </Modal>
+      ) : null}
     </div>
   )
 }

@@ -10,6 +10,8 @@ export interface AumSlice {
 
 interface AumBreakdownChartProps {
   data: AumSlice[]
+  height?: number
+  onExpand?: () => void
 }
 
 const formatBn = (value: number) =>
@@ -17,15 +19,35 @@ const formatBn = (value: number) =>
     maximumFractionDigits: value < 10 ? 2 : 1,
   })} bn`
 
-const AumBreakdownChart = ({ data }: AumBreakdownChartProps) => (
+const AumBreakdownChart = ({ data, height, onExpand }: AumBreakdownChartProps) => (
   <div className="panel">
-    <div className="panel__header">
-      <h2>AUM concentration</h2>
-      <span className="panel__helper">Top managers by share</span>
+    <div className="panel__header panel__header--with-actions">
+      <div>
+        <h2>AUM concentration</h2>
+        <span className="panel__helper">Top managers by share</span>
+      </div>
+      {onExpand ? (
+        <button
+          type="button"
+          className="panel__action-btn"
+          aria-label="Expand AUM concentration chart"
+          onClick={onExpand}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M8 4H4v4M20 16v4h-4M4 8l5-5M20 16l-5 5M16 4h4v4M4 16v4h4M16 4l4 4M4 16l4 4"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+      ) : null}
     </div>
     {data.length ? (
       <div className="panel__chart">
-        <ResponsiveContainer width="100%" height={320}>
+        <ResponsiveContainer width="100%" height={height ?? 320}>
           <PieChart>
             <Pie data={data} dataKey="value" nameKey="name" innerRadius={70} outerRadius={110} paddingAngle={4}>
               {data.map((slice) => (
