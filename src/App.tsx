@@ -1,27 +1,45 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 import './App.css'
 import MetricCard from './components/MetricCard'
-import ManagerAumChart from './components/ManagerAumChart'
-import ReturnsChart from './components/ReturnsChart'
 import FundsTable from './components/FundsTable'
 import ManagerFilter from './components/ManagerFilter'
 import Loader from './components/Loader'
+import NavSnapshotGrid from './components/NavSnapshotGrid'
 import { aggregateByManager, fetchFundData, FUNDS_CSV_URL } from './services/fundData'
-import type { FundRecord } from './types'
+import { fetchNavSeries } from './services/navData'
+import type { FundNavSeries, FundRecord, NavSnapshot } from './types'
+
+const ManagerAumChart = lazy(() => import('./components/ManagerAumChart'))
+const ReturnsChart = lazy(() => import('./components/ReturnsChart'))
+const NavTrendChart = lazy(() => import('./components/NavTrendChart'))
+const NavPriceSpreadChart = lazy(() => import('./components/NavPriceSpreadChart'))
+
+const ChartFallback = ({ title, helper }: { title: string; helper?: string }) => (
+  <div className="panel panel--loading">
+    <div className="panel__header">
+      <h2>{title}</h2>
+      {helper ? <span className="panel__helper">{helper}</span> : null}
+    </div>
+    <div className="panel__empty">Loading visualization…</div>
+  </div>
+)
 
 function App() {
   const [funds, setFunds] = useState<FundRecord[]>([])
-  const [loading, setLoading] = useState(true)
+  const [fundsLoading, setFundsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedManager, setSelectedManager] = useState('all')
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null)
+  const [navSeries, setNavSeries] = useState<FundNavSeries[]>([])
+  const [navLoading, setNavLoading] = useState(true)
+  const [navError, setNavError] = useState<string | null>(null)
 
   useEffect(() => {
     let ignore = false
 
     const load = async () => {
       try {
-        setLoading(true)
+        setFundsLoading(true)
         setError(null)
         const records = await fetchFundData()
         if (!ignore) {
@@ -34,12 +52,41 @@ function App() {
         }
       } finally {
         if (!ignore) {
-          setLoading(false)
+          setFundsLoading(false)
         }
       }
     }
 
     load()
+
+    return () => {
+      ignore = true
+    }
+  }, [])
+
+  useEffect(() => {
+    let ignore = false
+
+    const loadNavSeries = async () => {
+      try {
+        setNavLoading(true)
+        setNavError(null)
+        const series = await fetchNavSeries()
+        if (!ignore) {
+          setNavSeries(series)
+        }
+      } catch (err) {
+        if (!ignore) {
+          setNavError(err instanceof Error ? err.message : 'Unknown error fetching NAV data')
+        }
+      } finally {
+        if (!ignore) {
+          setNavLoading(false)
+        }
+      }
+    }
+
+    loadNavSeries()
 
     return () => {
       ignore = true
@@ -131,7 +178,81 @@ function App() {
     [filteredFunds],
   )
 
-  const showContent = !loading && !error
+  const navSnapshots = useMemo<NavSnapshot[]>(() => {
+    return navSeries
+      .map<NavSnapshot | null>((series) => {
+        if (!series.points.length) return null
+        const meaningfulPoint = [...series.points]
+          .slice()
+          .reverse()
+          .find(
+            (point) =>
+              point.navTotal !== null ||
+              point.navPerUnit !== null ||
+              point.salePrice !== null ||
+              point.repurchasePrice !== null,
+          )
+        const latest = meaningfulPoint ?? series.points[series.points.length - 1]
+        const snapshot: NavSnapshot = {
+          fundId: series.fundId,
+          label: series.label,
+          navTotal: latest.navTotal,
+          navTotalBn: latest.navTotal !== null ? latest.navTotal / 1_000_000_000 : null,
+          navPerUnit: latest.navPerUnit,
+          salePrice: latest.salePrice,
+          repurchasePrice: latest.repurchasePrice,
+          lastUpdated: latest.date || null,
+          collectedAt: latest.collectedAt ?? null,
+        }
+        return snapshot
+      })
+      .filter((snapshot): snapshot is NavSnapshot => snapshot !== null)
+  }, [navSeries])
+
+  const navSnapshotTiles = useMemo(() => {
+    return [...navSnapshots]
+      .sort((a, b) => (b.navTotal ?? 0) - (a.navTotal ?? 0))
+      .slice(0, 3)
+  }, [navSnapshots])
+
+  const navTrendSeries = useMemo(() => {
+    const ranked = navSeries
+      .map((series) => ({
+        ...series,
+        latestNavTotal: series.points.length
+          ? series.points[series.points.length - 1].navTotal ?? 0
+          : 0,
+      }))
+      .filter((series) => series.points.some((point) => point.navPerUnit !== null))
+      .sort((a, b) => (b.latestNavTotal ?? 0) - (a.latestNavTotal ?? 0))
+      .slice(0, 5)
+
+    return ranked.map(({ latestNavTotal, ...rest }) => rest)
+  }, [navSeries])
+
+  const navPriceSnapshots = useMemo(() => {
+    return [...navSnapshots]
+      .filter((snapshot) => snapshot.salePrice !== null || snapshot.repurchasePrice !== null)
+      .sort(
+        (a, b) =>
+          (b.salePrice ?? b.navPerUnit ?? 0) -
+          (a.salePrice ?? a.navPerUnit ?? 0),
+      )
+      .slice(0, 6)
+  }, [navSnapshots])
+
+  const latestNavUpdate = useMemo(() => {
+    let latest: string | null = null
+    navSnapshots.forEach((snapshot) => {
+      if (!snapshot.lastUpdated) return
+      if (!latest || new Date(snapshot.lastUpdated).getTime() > new Date(latest).getTime()) {
+        latest = snapshot.lastUpdated
+      }
+    })
+    return latest
+  }, [navSnapshots])
+
+  const showContent = !fundsLoading && !error
 
   return (
     <div className="dashboard">
@@ -164,7 +285,7 @@ function App() {
         />
       </section>
 
-      {loading ? <Loader message="Loading fund data…" /> : null}
+      {fundsLoading ? <Loader message="Loading fund data…" /> : null}
 
       {error ? (
         <div className="dashboard__state dashboard__state--error">
@@ -185,9 +306,57 @@ function App() {
           </section>
 
           <section className="charts-grid">
-            <ManagerAumChart data={managerAggregates} />
-            <ReturnsChart data={returnsSeries} />
+            <Suspense fallback={<ChartFallback title="AUM by Manager" helper="TZS billions" />}>
+              <ManagerAumChart data={managerAggregates} />
+            </Suspense>
+            <Suspense fallback={<ChartFallback title="Total Return by Fund" helper="1-year bar · 3-year CAGR line" />}>
+              <ReturnsChart data={returnsSeries} />
+            </Suspense>
           </section>
+
+          {(navSnapshotTiles.length || navTrendSeries.length || navError || navLoading) && (
+            <section className="nav-section">
+              <div className="nav-section__header">
+                <div>
+                  <h2>NAV intelligence</h2>
+                  <p>Daily fund NAV feed parsed into highlights, price spreads, and trends.</p>
+                </div>
+                <div className="nav-section__status">
+                  {navError ? (
+                    <span className="nav-section__status--error">
+                      Unable to load NAV feed: {navError}
+                    </span>
+                  ) : navLoading ? (
+                    <span>Syncing NAV history…</span>
+                  ) : latestNavUpdate ? (
+                    <span>
+                      Last NAV update: {' '}
+                      {new Date(latestNavUpdate).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </span>
+                  ) : (
+                    <span>NAV feed ready</span>
+                  )}
+                </div>
+              </div>
+
+              {navSnapshotTiles.length ? (
+                <NavSnapshotGrid snapshots={navSnapshotTiles} />
+              ) : null}
+
+              <div className="charts-grid nav-charts-grid">
+                <Suspense fallback={<ChartFallback title="NAV per unit trend" />}>
+                  <NavTrendChart series={navTrendSeries} />
+                </Suspense>
+                <Suspense fallback={<ChartFallback title="Sale vs repurchase window" />}>
+                  <NavPriceSpreadChart snapshots={navPriceSnapshots} />
+                </Suspense>
+              </div>
+            </section>
+          )}
 
           <FundsTable data={tableData} />
         </>
