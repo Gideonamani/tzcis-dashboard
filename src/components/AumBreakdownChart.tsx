@@ -47,8 +47,8 @@ const AumBreakdownChart = ({ data, height, onExpand }: AumBreakdownChartProps) =
     </div>
     {data.length ? (
       <div className="panel__chart">
-        <ResponsiveContainer width="100%" height={height ?? 320}>
-          <PieChart>
+        <ResponsiveContainer width="100%" height={height ?? 360}>
+          <PieChart margin={{ top: 20, bottom: 60, left: 0, right: 0 }}>
             <Pie data={data} dataKey="value" nameKey="name" innerRadius={70} outerRadius={110} paddingAngle={4}>
               {data.map((slice) => (
                 <Cell key={slice.name} fill={slice.color} />
@@ -61,7 +61,11 @@ const AumBreakdownChart = ({ data, height, onExpand }: AumBreakdownChartProps) =
               ]}
               contentStyle={{ borderRadius: 12, borderColor: '#e2e8f0' }}
             />
-            <Legend verticalAlign="bottom" height={36} />
+            <Legend
+              verticalAlign="bottom"
+              align="center"
+              wrapperStyle={{ paddingTop: 8 }}
+            />
           </PieChart>
         </ResponsiveContainer>
       </div>

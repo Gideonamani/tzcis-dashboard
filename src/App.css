@@ -486,12 +486,17 @@
   gap: 1.5rem;
 }
 
+.modal__chart,
+.modal__table-wrapper {
+  min-height: 420px;
+}
+
 .modal__chart .panel {
+  height: 100%;
   box-shadow: none;
 }
 
 .modal__table-wrapper {
-  max-height: 360px;
   overflow: auto;
   border: 1px solid rgba(148, 163, 184, 0.35);
   border-radius: 1rem;
@@ -516,6 +521,9 @@
   font-size: 0.8rem;
   letter-spacing: 0.05em;
   color: #475569;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .modal-table tbody tr:hover td {
@@ -524,13 +532,15 @@
 
 @media (min-width: 900px) {
   .modal__grid {
-    flex-direction: row;
-    align-items: flex-start;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 1.5rem;
   }
 
   .modal__chart,
   .modal__table-wrapper {
-    flex: 1;
+    height: 100%;
   }
 }
 
