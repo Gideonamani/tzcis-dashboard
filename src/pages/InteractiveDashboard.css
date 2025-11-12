@@ -1,40 +1,23 @@
 .interactive-page {
-  --page-bg: #050819;
-  --panel-bg: #131c31;
-  --panel-bg-soft: #1b2640;
-  --panel-border: rgba(148, 163, 184, 0.2);
-  --text-default: #f1f5f9;
-  --text-muted: #94a3b8;
-  --accent: #818cf8;
-  --accent-strong: #a78bfa;
-  --button-bg: rgba(129, 140, 248, 0.15);
-  --button-border: rgba(129, 140, 248, 0.4);
-  --table-header-bg: rgba(148, 163, 184, 0.1);
-  --input-bg: rgba(15, 23, 42, 0.9);
-  --shadow: 0 20px 60px rgba(15, 23, 42, 0.45);
-
+  --page-bg: var(--interactive-page-bg);
+  --panel-bg: var(--interactive-panel-bg);
+  --panel-bg-soft: var(--interactive-panel-bg-soft);
+  --panel-border: var(--interactive-panel-border);
+  --text-default: var(--interactive-text-default);
+  --text-muted: var(--interactive-text-muted);
+  --accent: var(--interactive-accent);
+  --accent-strong: var(--interactive-accent-strong);
+  --button-bg: var(--interactive-button-bg);
+  --button-border: var(--interactive-button-border);
+  --table-header-bg: var(--interactive-table-header-bg);
+  --input-bg: var(--interactive-input-bg);
+  --shadow: var(--interactive-shadow);
   min-height: 100vh;
   padding: 1.5rem;
   background-color: var(--page-bg);
   color: var(--text-default);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-.interactive-page[data-theme='light'] {
-  --page-bg: #f5f7fb;
-  --panel-bg: #ffffff;
-  --panel-bg-soft: #f8fafc;
-  --panel-border: rgba(15, 23, 42, 0.08);
-  --text-default: #0f172a;
-  --text-muted: #475569;
-  --accent: #6366f1;
-  --accent-strong: #4c1d95;
-  --button-bg: rgba(99, 102, 241, 0.08);
-  --button-border: rgba(99, 102, 241, 0.3);
-  --table-header-bg: rgba(148, 163, 184, 0.2);
-  --input-bg: rgba(248, 250, 252, 0.9);
-  --shadow: 0 30px 60px rgba(15, 23, 42, 0.12);
 }
 
 .interactive-page__shell {
@@ -73,13 +56,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
-  align-items: stretch;
-}
-
-.interactive-page__action-stack {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
   align-items: center;
 }
 
@@ -107,53 +83,6 @@
 .interactive-page button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
-}
-
-.theme-toggle {
-  border: none;
-  background: radial-gradient(circle at top, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0));
-  color: var(--text-default);
-  padding: 0.5rem 0.85rem;
-  border-radius: 999px;
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  min-width: 220px;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.35);
-  border: 1px solid rgba(248, 250, 252, 0.08);
-}
-
-.theme-toggle__icon {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #facc15, #f59e0b 55%, #f97316);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #1f2937;
-  box-shadow:
-    0 0 20px rgba(250, 204, 21, 0.45),
-    inset 0 -4px 8px rgba(249, 115, 22, 0.6);
-}
-
-.theme-toggle__text {
-  display: flex;
-  flex-direction: column;
-  text-align: left;
-}
-
-.theme-toggle__text strong {
-  font-size: 0.95rem;
-}
-
-.theme-toggle__text small {
-  color: var(--text-muted);
-  font-size: 0.8rem;
-}
-
-.theme-toggle:hover {
-  border-color: rgba(250, 204, 21, 0.6);
 }
 
 .ghost-button {
@@ -380,8 +309,4 @@
     height: 300px;
   }
 
-  .theme-toggle {
-    width: 100%;
-    justify-content: flex-start;
-  }
 }

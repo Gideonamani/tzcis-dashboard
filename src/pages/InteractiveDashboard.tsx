@@ -4,8 +4,7 @@ import { toPng } from 'html-to-image'
 import { fetchNavSeries } from '../services/navData'
 import type { FundNavPoint, FundNavSeries } from '../types'
 import './InteractiveDashboard.css'
-
-type ThemeMode = 'dark' | 'light'
+import { useTheme, type ThemeMode } from '../context/ThemeContext'
 
 const THEME_TOKENS: Record<
   ThemeMode,
@@ -110,15 +109,14 @@ const csvNumber = (value: number | null | undefined) =>
   Number.isFinite(value ?? null) ? (value as number).toString() : ''
 
 const InteractiveDashboard = () => {
+  const { mode: theme } = useTheme()
   const [series, setSeries] = useState<FundNavSeries[]>([])
   const [selectedFundId, setSelectedFundId] = useState<string>('')
   const [startDate, setStartDate] = useState<string>('')
   const [endDate, setEndDate] = useState<string>('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [theme, setTheme] = useState<ThemeMode>('dark')
   const chartRef = useRef<HTMLDivElement | null>(null)
-  const toggleTheme = () => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))
 
   useEffect(() => {
     let ignore = false
@@ -287,7 +285,7 @@ const InteractiveDashboard = () => {
   const themeColors = THEME_TOKENS[theme]
 
   return (
-    <div className="interactive-page" data-theme={theme}>
+    <div className="interactive-page">
       <div className="interactive-page__shell">
         <header className="interactive-page__header">
           <div>
@@ -298,40 +296,15 @@ const InteractiveDashboard = () => {
             </p>
           </div>
           <div className="interactive-page__header-actions">
-            <button
-              type="button"
-              className="theme-toggle"
-              onClick={toggleTheme}
-              aria-label="Toggle dark or light mode"
-            >
-              <span className="theme-toggle__icon" aria-hidden="true">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path
-                    d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <circle cx="5" cy="5" r="1" />
-                  <circle cx="19" cy="5" r="1" />
-                </svg>
-              </span>
-              <span className="theme-toggle__text">
-                <strong>Toggle Dark/Light Mode</strong>
-                <small>{theme === 'dark' ? 'Dark mode active' : 'Light mode active'}</small>
-              </span>
+            <button type="button" onClick={handleResetDates} disabled={!filteredPoints.length}>
+              Reset dates
             </button>
-            <div className="interactive-page__action-stack">
-              <button type="button" onClick={handleResetDates} disabled={!filteredPoints.length}>
-                Reset dates
-              </button>
-              <button type="button" onClick={handleExportPng} disabled={!chartData.length}>
-                Export chart PNG
-              </button>
-              <button type="button" onClick={handleDownloadCsv} disabled={!selectedSeries}>
-                Download CSV
-              </button>
-            </div>
+            <button type="button" onClick={handleExportPng} disabled={!chartData.length}>
+              Export chart PNG
+            </button>
+            <button type="button" onClick={handleDownloadCsv} disabled={!selectedSeries}>
+              Download CSV
+            </button>
           </div>
         </header>
 
