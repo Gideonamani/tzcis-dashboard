@@ -1,0 +1,121 @@
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  background: #0f172a;
+}
+
+.nav-tray {
+  width: 240px;
+  background: radial-gradient(circle at top, #0b1325, #050814 60%);
+  color: #e2e8f0;
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  border-right: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.nav-tray__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.nav-tray__logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #4c1d95, #818cf8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #f9fafb;
+  box-shadow: 0 10px 30px rgba(99, 102, 241, 0.35);
+}
+
+.nav-tray__title {
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.nav-tray__subtitle {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(226, 232, 240, 0.65);
+}
+
+.nav-tray__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.nav-tray__link {
+  text-decoration: none;
+  color: rgba(226, 232, 240, 0.8);
+  font-weight: 500;
+  padding: 0.85rem 1rem;
+  border-radius: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  position: relative;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.nav-tray__link:hover {
+  color: #f8fafc;
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.nav-tray__pill {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.15);
+}
+
+.nav-tray__link.is-active {
+  background: rgba(99, 102, 241, 0.2);
+  color: #fff;
+}
+
+.nav-tray__link.is-active .nav-tray__pill {
+  background: linear-gradient(135deg, #4c1d95, #818cf8);
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.6);
+}
+
+.nav-tray__footer {
+  margin-top: auto;
+  font-size: 0.85rem;
+  color: rgba(226, 232, 240, 0.55);
+}
+
+.app-shell__content {
+  flex: 1;
+  background: #f5f7fb;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+@media (max-width: 960px) {
+  .app-shell {
+    flex-direction: column;
+  }
+
+  .nav-tray {
+    width: 100%;
+    flex-direction: column;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+  }
+
+  .nav-tray__nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}

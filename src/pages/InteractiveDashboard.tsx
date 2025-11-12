@@ -118,6 +118,7 @@ const InteractiveDashboard = () => {
   const [error, setError] = useState<string | null>(null)
   const [theme, setTheme] = useState<ThemeMode>('dark')
   const chartRef = useRef<HTMLDivElement | null>(null)
+  const toggleTheme = () => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))
 
   useEffect(() => {
     let ignore = false
@@ -283,7 +284,6 @@ const InteractiveDashboard = () => {
 
   const lastDataPoint = filteredPoints[filteredPoints.length - 1]
 
-  const themeToggleLabel = theme === 'dark' ? 'Dark mode' : 'Light mode'
   const themeColors = THEME_TOKENS[theme]
 
   return (
@@ -298,18 +298,40 @@ const InteractiveDashboard = () => {
             </p>
           </div>
           <div className="interactive-page__header-actions">
-            <button type="button" className="ghost-button" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
-              {theme === 'dark' ? 'Switch to light' : 'Switch to dark'}
+            <button
+              type="button"
+              className="theme-toggle"
+              onClick={toggleTheme}
+              aria-label="Toggle dark or light mode"
+            >
+              <span className="theme-toggle__icon" aria-hidden="true">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path
+                    d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <circle cx="5" cy="5" r="1" />
+                  <circle cx="19" cy="5" r="1" />
+                </svg>
+              </span>
+              <span className="theme-toggle__text">
+                <strong>Toggle Dark/Light Mode</strong>
+                <small>{theme === 'dark' ? 'Dark mode active' : 'Light mode active'}</small>
+              </span>
             </button>
-            <button type="button" onClick={handleResetDates} disabled={!filteredPoints.length}>
-              Reset dates
-            </button>
-            <button type="button" onClick={handleExportPng} disabled={!chartData.length}>
-              Export chart PNG
-            </button>
-            <button type="button" onClick={handleDownloadCsv} disabled={!selectedSeries}>
-              Download CSV
-            </button>
+            <div className="interactive-page__action-stack">
+              <button type="button" onClick={handleResetDates} disabled={!filteredPoints.length}>
+                Reset dates
+              </button>
+              <button type="button" onClick={handleExportPng} disabled={!chartData.length}>
+                Export chart PNG
+              </button>
+              <button type="button" onClick={handleDownloadCsv} disabled={!selectedSeries}>
+                Download CSV
+              </button>
+            </div>
           </div>
         </header>
 
@@ -538,9 +560,6 @@ const InteractiveDashboard = () => {
           </>
         ) : null}
       </div>
-      <span className="sr-only" aria-live="polite">
-        {themeToggleLabel}
-      </span>
     </div>
   )
 }
