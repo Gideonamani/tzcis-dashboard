@@ -1,0 +1,332 @@
+.interactive-page {
+  --page-bg: #050819;
+  --panel-bg: #131c31;
+  --panel-bg-soft: #1b2640;
+  --panel-border: rgba(148, 163, 184, 0.2);
+  --text-default: #f1f5f9;
+  --text-muted: #94a3b8;
+  --accent: #818cf8;
+  --accent-strong: #a78bfa;
+  --button-bg: rgba(129, 140, 248, 0.15);
+  --button-border: rgba(129, 140, 248, 0.4);
+  --table-header-bg: rgba(148, 163, 184, 0.1);
+  --input-bg: rgba(15, 23, 42, 0.9);
+  --shadow: 0 20px 60px rgba(15, 23, 42, 0.45);
+
+  min-height: 100vh;
+  padding: 1.5rem;
+  background-color: var(--page-bg);
+  color: var(--text-default);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.interactive-page[data-theme='light'] {
+  --page-bg: #f5f7fb;
+  --panel-bg: #ffffff;
+  --panel-bg-soft: #f8fafc;
+  --panel-border: rgba(15, 23, 42, 0.08);
+  --text-default: #0f172a;
+  --text-muted: #475569;
+  --accent: #6366f1;
+  --accent-strong: #4c1d95;
+  --button-bg: rgba(99, 102, 241, 0.08);
+  --button-border: rgba(99, 102, 241, 0.3);
+  --table-header-bg: rgba(148, 163, 184, 0.2);
+  --input-bg: rgba(248, 250, 252, 0.9);
+  --shadow: 0 30px 60px rgba(15, 23, 42, 0.12);
+}
+
+.interactive-page__shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.interactive-page__header h1 {
+  font-size: clamp(1.9rem, 4vw, 2.8rem);
+  margin: 0.25rem 0 0.5rem;
+}
+
+.interactive-page__eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.interactive-page__subtitle {
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.interactive-page__header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.interactive-page__header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.interactive-page__header-actions button {
+  min-width: 150px;
+}
+
+.interactive-page button,
+.interactive-page select,
+.interactive-page input {
+  font: inherit;
+}
+
+.interactive-page button {
+  background-color: var(--button-bg);
+  color: var(--text-default);
+  border: 1px solid var(--button-border);
+  padding: 0.6rem 1rem;
+  border-radius: 0.7rem;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.interactive-page button:hover:not(:disabled) {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.interactive-page button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ghost-button {
+  background-color: transparent;
+  border-color: var(--panel-border);
+}
+
+.interactive-page__filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+}
+
+.filter-card {
+  background: var(--panel-bg);
+  border-radius: 1rem;
+  border: 1px solid var(--panel-border);
+  padding: 1.25rem;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.filter-card label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.filter-card select,
+.filter-card input {
+  background-color: var(--input-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 0.65rem;
+  padding: 0.55rem 0.75rem;
+  color: var(--text-default);
+}
+
+.filter-card__meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: auto;
+}
+
+.filter-card--range {
+  gap: 0.9rem;
+}
+
+.quick-ranges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.filter-card--kpi {
+  align-items: center;
+  text-align: center;
+  gap: 0.5rem;
+}
+
+.kpi-label {
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.kpi-value {
+  font-size: 2.5rem;
+  margin: 0;
+  font-weight: 700;
+}
+
+.kpi-value--positive {
+  color: #34d399;
+}
+
+.kpi-value--negative {
+  color: #f87171;
+}
+
+.kpi-value--neutral {
+  color: #facc15;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.kpi-grid p {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.kpi-grid strong {
+  font-size: 1rem;
+}
+
+.interactive-page__content {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: 1.25rem;
+}
+
+.interactive-page .panel {
+  background: var(--panel-bg);
+  border-radius: 1.25rem;
+  border: 1px solid var(--panel-border);
+  padding: 1.4rem;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.interactive-page .panel--chart {
+  min-height: 420px;
+}
+
+.interactive-page .panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.interactive-page .panel__helper {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.interactive-page .chart-wrapper {
+  height: 360px;
+}
+
+.interactive-page .panel__empty {
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.interactive-page .panel--loading,
+.interactive-page .panel--error,
+.interactive-page .panel--empty {
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 120px;
+}
+
+.interactive-page .panel--error {
+  border-color: #f87171;
+  color: #fecaca;
+}
+
+.interactive-page .panel--loading {
+  color: var(--text-muted);
+}
+
+.interactive-page .panel--table {
+  min-height: 420px;
+}
+
+.interactive-page .table-scroll {
+  overflow: auto;
+  max-height: 360px;
+}
+
+.interactive-page table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.interactive-page thead th {
+  text-align: left;
+  padding: 0.5rem 0.25rem;
+  background-color: var(--table-header-bg);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.interactive-page tbody td {
+  padding: 0.55rem 0.25rem;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.interactive-page tbody tr:hover {
+  background: var(--panel-bg-soft);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+@media (max-width: 960px) {
+  .interactive-page__content {
+    grid-template-columns: 1fr;
+  }
+
+  .interactive-page .panel--chart,
+  .interactive-page .panel--table {
+    min-height: unset;
+  }
+
+  .interactive-page .chart-wrapper {
+    height: 300px;
+  }
+}
