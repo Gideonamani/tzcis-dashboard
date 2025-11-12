@@ -341,6 +341,7 @@ function asObjectsTrimmed_(sh) {
   for (const r of vals) {
     const row = {
       fund_id:                           get(r, 'fund_id'),
+      parsed_sheetname:                  get(r, 'parsed_sheetname'),
       source_url:                        get(r, 'source_url'),
       source_type:                       get(r, 'source_type'),
       date_hint:                         get(r, 'date_hint'),

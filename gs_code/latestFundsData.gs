@@ -40,7 +40,7 @@ function refreshLatestFundDataSheet() {
     const fundId = (cfg && cfg.fund_id) ? String(cfg.fund_id).trim() : '';
     if (!fundId) return;
 
-    const parsedName = toParsedSheetName_(fundId);
+    const parsedName = chooseParsedSheetName_(cfg, fundId);
     const parsedSheet = parsedSS.getSheetByName(parsedName);
     if (!parsedSheet || parsedSheet.getLastRow() < 2) {
       missing++;
@@ -88,4 +88,11 @@ function latestHeader_() {
 
 function toParsedSheetName_(fundId) {
   return 'parsed_' + String(fundId || '').replace(/\./g, '_');
+}
+
+function chooseParsedSheetName_(cfg, fallbackFundId) {
+  const explicit = cfg && cfg.parsed_sheetname
+    ? String(cfg.parsed_sheetname).trim()
+    : '';
+  return explicit || toParsedSheetName_(fallbackFundId);
 }
