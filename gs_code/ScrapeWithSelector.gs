@@ -82,8 +82,37 @@ function scrapeFromConfig() {
       });
       record['Scraped Time'] = isoNow_();
 
-      appendToSheet_(j.raw_sheetname, record, j.date_hint, j.raw_date_columntitle, j.date_display_format);
-      logs.push(`✔ ${j.raw_sheetname}: appended latest row (${latestRow[dateIdx]})`);
+      const canonicalHeaders = expectedHeaders.concat(['Scraped Time']);
+      const existingHeaders = getSheetHeaders_(j.raw_sheetname);
+      const headersOrdered = mergeHeadersPreserving_(existingHeaders, canonicalHeaders);
+      const dateHeaderName = j.raw_date_columntitle || 'Date';
+      const dateHeaderNorm = CFG.NORM(dateHeaderName);
+      const normalizedRecord = Object.fromEntries(Object.keys(record).map(k => [CFG.NORM(k), record[k]]));
+      const normalizedDate = normalizeDateString_(record[dateHeaderName], j.date_hint);
+      let jsDate = record[dateHeaderName];
+      if (normalizedDate && /^\d{4}-\d{2}-\d{2}$/.test(normalizedDate)) {
+        const [y, m, d] = normalizedDate.split('-').map(Number);
+        jsDate = new Date(y, m - 1, d);
+      }
+      const rowValues = headersOrdered.map(h => {
+        const norm = CFG.NORM(h);
+        if (norm === dateHeaderNorm) return jsDate;
+        return normalizedRecord[norm] != null ? normalizedRecord[norm] : '';
+      });
+      const dateFormat = j.date_display_format || chooseDateDisplayFormat_(null, j.date_hint);
+
+      const result = writeLatestRow_({
+        sheetName: j.raw_sheetname,
+        headers: headersOrdered,
+        rowValues,
+        dateHint: 'YYYY-MM-DD',
+        dateHeader: /^date\b/i,
+        scrapedHeader: /^scraped time\b/i,
+        dateFormat,
+        timezone: CFG.TIMEZONE,
+        numericTolerance: 0
+      });
+      logs.push(`✔ ${j.raw_sheetname}: ${result} latest row (${record[dateHeaderName]})`);
     } catch (e) {
       logs.push(`✖ ${j.raw_sheetname}: ${e.message}`);
     }
@@ -341,55 +370,6 @@ function buildHeaderMapping_(sourceHeaderNorm, expectedHeaders) {
   return map; // { "Net Asset Value(TZS)": 1, ... }
 }
 
-function appendToSheet_(sheetName, record, dateHint, dateColumnTitle, dateDisplayFormat) {
-  const ss = SpreadsheetApp.openById(RAW_SS_ID);
-  const sh = ss.getSheetByName(sheetName);
-  if (!sh) throw new Error(`Destination sheet not found: ${sheetName}`);
-
-  // 1️⃣ Ensure header row
-  let headers = sh.getLastRow()
-    ? sh.getRange(1, 1, 1, Math.max(1, sh.getLastColumn())).getValues()[0].map(String)
-    : [];
-  if (headers.length === 1 && headers[0] === '') headers = [];
-
-  const headerSet = new Set(headers);
-  for (const k of Object.keys(record).concat(['Scraped Time'])) {
-    if (!headerSet.has(k)) {
-      headers.push(k);
-      headerSet.add(k);
-    }
-  }
-  sh.getRange(1, 1, 1, headers.length).setValues([headers]);
-
-  // 2️⃣ Create row array in header order
-  const row = headers.map(h => record[h] != null ? record[h] : '');
-
-  // 3️⃣ Insert new row below header
-  sh.insertRowsAfter(1, 1);
-  const range = sh.getRange(2, 1, 1, headers.length);
-  range.setValues([row]);
-
-  // 4️⃣ If there’s a date column and hint, format it
-  const dateColIdx = headers.findIndex(h => CFG.NORM(h) === CFG.NORM(dateColumnTitle));
-  if (dateColIdx > -1) {
-    const cell = sh.getRange(2, dateColIdx + 1);
-    const rawVal = cell.getValue();
-    const normalized = normalizeDateString_(rawVal, dateHint);
-    const parsed = tryParseDate_(normalized || rawVal);
-    if (parsed) cell.setValue(parsed);
-    const formatToUse = chooseDateDisplayFormat_(dateDisplayFormat, dateHint);
-    if (formatToUse) cell.setNumberFormat(formatToUse);
-  }
-}
-
-
-
-function tryParseDate_(s) {
-  const parts = String(s).match(/(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
-  if (!parts) return null;
-  return new Date(parts[1], parts[2] - 1, parts[3]);
-}
-
 function chooseDateDisplayFormat_(explicitFormat, hint) {
   if (explicitFormat) return explicitFormat;
   const key = (hint || '').toUpperCase();
@@ -409,6 +389,38 @@ function chooseDateDisplayFormat_(explicitFormat, hint) {
       return 'yyyy-MM-dd';
   }
 }
+
+function getSheetHeaders_(sheetName) {
+  try {
+    const sh = SpreadsheetApp.openById(RAW_SS_ID).getSheetByName(sheetName);
+    if (!sh) return [];
+    const lastCol = sh.getLastColumn();
+    if (!lastCol) return [];
+    const header = sh.getRange(1, 1, 1, lastCol).getValues()[0];
+    return header.map(h => String(h || '').trim());
+  } catch (e) {
+    return [];
+  }
+}
+
+function mergeHeadersPreserving_(existing, canonical) {
+  const out = [];
+  const seen = new Set();
+  (existing || []).forEach(h => {
+    const norm = CFG.NORM(h || '');
+    if (!norm || seen.has(norm)) return;
+    out.push(h);
+    seen.add(norm);
+  });
+  (canonical || []).forEach(h => {
+    const norm = CFG.NORM(h || '');
+    if (!norm || seen.has(norm)) return;
+    out.push(h);
+    seen.add(norm);
+  });
+  return out;
+}
+
 
 
 /***** ================== DATE HELPERS ================== *****/
