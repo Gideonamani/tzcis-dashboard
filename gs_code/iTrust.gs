@@ -1,10 +1,10 @@
 /***** CONFIG ******/
 const CFG_SHEET = '_config';
-const DATE_FORMAT  = 'MM-dd-yyyy';          // display format in Sheets
 const TZ           = Session.getScriptTimeZone() || 'Africa/Dar_es_Salaam';
 const NUM_TOL = 1e-9;     // ignore tiny rounding drifts (set 0 to disable)
 const QA_SHEET = '_qa';
 const LOG_QA_ON_INSERT = true; // set false if you ever want to silence insert logs
+const DEFAULT_DATE_DISPLAY_FORMAT = 'M/d/yyyy';
 
 
 /***** PUBLIC ENTRY ******/
@@ -25,12 +25,13 @@ function updateFromConfig_ItrustOnly() {
       }
       const rec = data[0]; // latest day record
 
-      const dateParts = String(rec.date).split('/'); // MM/DD/YYYY
-      // const jsDate = new Date(Number(dateParts[2]), Number(dateParts[0]) - 1, Number(dateParts[1]));
-      // const jsDate = parseDate_(rec.date, r.date_hint);
+      const isoDate = parseDate_(rec.date, r.date_hint || 'MM/DD/YYYY');
+      const jsDate = isoDate
+        ? new Date(Number(isoDate.slice(0, 4)), Number(isoDate.slice(5, 7)) - 1, Number(isoDate.slice(8, 10)))
+        : rec.date;
 
       const row = [
-        rec.date, // No need to put jsDate since we want the date as is
+        jsDate,
         toNum_(rec.netAssetValue),
         toNum_(rec.outStandingUnits),
         toNum_(rec.navPerUnit),
@@ -45,10 +46,10 @@ function updateFromConfig_ItrustOnly() {
         sheetName: r.raw_sheetname,
         headers: itrust_sheet_headers,
         rowValues: row,
-        dateHint: r.date_hint,
+        dateHint: 'YYYY-MM-DD',
         dateHeader: /^date\b/i,
         scrapedHeader: /^scraped time$/i,
-        dateFormat: DATE_FORMAT,
+        dateFormat: r.date_display_format || DEFAULT_DATE_DISPLAY_FORMAT,
         timezone: TZ,
         numericTolerance: NUM_TOL,
         logQaOnInsert: LOG_QA_ON_INSERT,
@@ -78,20 +79,22 @@ function readConfigRows_() {
   const header = values[0].map(h => String(h).trim());
   const idx = (name) => header.findIndex(h => h.toLowerCase() === name.toLowerCase());
 
-  const fundIdx     = idx('fund_id');
-  const urlIdx      = idx('source_url');
-  const nameIdx     = idx('raw_sheetname');
-  const dateHintIdx = idx('date_hint');
+  const fundIdx       = idx('fund_id');
+  const urlIdx        = idx('source_url');
+  const nameIdx       = idx('raw_sheetname');
+  const dateHintIdx   = idx('date_hint');
+  const dateDisplayIdx= idx('date_display_format');
 
   if ([fundIdx, urlIdx, nameIdx].some(i => i < 0)) {
     throw new Error("Expected headers 'fund_id', 'source_url', 'raw_sheetname' in _config.");
   }
 
   return values.slice(1).filter(r => r.join('').trim() !== '').map(r => ({
-    fund_id:      String(r[fundIdx]).trim(),
-    source_url:   String(r[urlIdx]).trim(),
-    raw_sheetname:String(r[nameIdx]).trim(),
-    date_hint:    String(r[dateHintIdx]).trim()
+    fund_id:            String(r[fundIdx]).trim(),
+    source_url:         String(r[urlIdx]).trim(),
+    raw_sheetname:      String(r[nameIdx]).trim(),
+    date_hint:          dateHintIdx >= 0 ? String(r[dateHintIdx]).trim() : '',
+    date_display_format: dateDisplayIdx >= 0 ? String(r[dateDisplayIdx]).trim() : ''
   }));
 }
 

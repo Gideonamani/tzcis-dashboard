@@ -82,7 +82,7 @@ function scrapeFromConfig() {
       });
       record['Scraped Time'] = isoNow_();
 
-      appendToSheet_(j.raw_sheetname, record, j.date_hint, j.raw_date_columntitle);
+      appendToSheet_(j.raw_sheetname, record, j.date_hint, j.raw_date_columntitle, j.date_display_format);
       logs.push(`✔ ${j.raw_sheetname}: appended latest row (${latestRow[dateIdx]})`);
     } catch (e) {
       logs.push(`✖ ${j.raw_sheetname}: ${e.message}`);
@@ -105,7 +105,7 @@ function installDailyTrigger() {
 /***** ================= CORE / I/O ================== *****/
 
 function readConfigRowsLong_() {
-  const ss = SpreadsheetApp.openById(RAW_SS_ID).getSheetByName(CFG.CONFIG_SHEET);
+  const sh = SpreadsheetApp.openById(RAW_SS_ID).getSheetByName(CFG.CONFIG_SHEET);
   if (!sh) throw new Error(`Missing sheet: ${CFG.CONFIG_SHEET}`);
 
   const vals = sh.getDataRange().getValues();
@@ -115,7 +115,7 @@ function readConfigRowsLong_() {
   // Column indexes
   const ix = {};
   [
-    'fund_id','raw_sheetname','source_url','source_type','source_css_selector','date_hint',
+    'fund_id','raw_sheetname','source_url','source_type','source_css_selector','date_hint','date_display_format',
     'raw_sheetname','raw_date_columntitle','raw_nav_total_columntitle','raw_units_outstanding_columntitle',
     'raw_nav_per_unit_columntitle','raw_sale_price_columntitle','raw_repurchase_price_columntitle'
   ].forEach(k => { ix[k] = H.indexOf(k); });
@@ -140,6 +140,7 @@ function readConfigRowsLong_() {
       source_type: str_(row[ix.source_type]) || 'html',
       source_css_selector,
       date_hint: str_(row[ix.date_hint]),
+      date_display_format: str_(row[ix.date_display_format]),
       raw_sheetname: str_(row[ix.raw_sheetname]),
 
       raw_date_columntitle: str_(row[ix.raw_date_columntitle]),
@@ -340,7 +341,7 @@ function buildHeaderMapping_(sourceHeaderNorm, expectedHeaders) {
   return map; // { "Net Asset Value(TZS)": 1, ... }
 }
 
-function appendToSheet_(sheetName, record, dateHint, dateColumnTitle) {
+function appendToSheet_(sheetName, record, dateHint, dateColumnTitle, dateDisplayFormat) {
   const ss = SpreadsheetApp.openById(RAW_SS_ID);
   const sh = ss.getSheetByName(sheetName);
   if (!sh) throw new Error(`Destination sheet not found: ${sheetName}`);
@@ -370,13 +371,14 @@ function appendToSheet_(sheetName, record, dateHint, dateColumnTitle) {
 
   // 4️⃣ If there’s a date column and hint, format it
   const dateColIdx = headers.findIndex(h => CFG.NORM(h) === CFG.NORM(dateColumnTitle));
-  if (dateColIdx > -1 && dateHint) {
+  if (dateColIdx > -1) {
     const cell = sh.getRange(2, dateColIdx + 1);
     const rawVal = cell.getValue();
-    // Try to parse into a real Date object
-    const d = tryParseDate_(rawVal);
-    if (d) cell.setValue(d);
-    cell.setNumberFormat(dateHint);
+    const normalized = normalizeDateString_(rawVal, dateHint);
+    const parsed = tryParseDate_(normalized || rawVal);
+    if (parsed) cell.setValue(parsed);
+    const formatToUse = chooseDateDisplayFormat_(dateDisplayFormat, dateHint);
+    if (formatToUse) cell.setNumberFormat(formatToUse);
   }
 }
 
@@ -386,6 +388,26 @@ function tryParseDate_(s) {
   const parts = String(s).match(/(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
   if (!parts) return null;
   return new Date(parts[1], parts[2] - 1, parts[3]);
+}
+
+function chooseDateDisplayFormat_(explicitFormat, hint) {
+  if (explicitFormat) return explicitFormat;
+  const key = (hint || '').toUpperCase();
+  switch (key) {
+    case 'MM/DD/YYYY':
+    case 'MDY':
+      return 'M/d/yyyy';
+    case 'DD/MM/YYYY':
+    case 'DMY':
+      return 'd/M/yyyy';
+    case 'YYYY-MM-DD':
+    case 'YMD':
+      return 'yyyy-MM-dd';
+    case 'DD-MM-YYYY':
+      return 'dd-MM-yyyy';
+    default:
+      return 'yyyy-MM-dd';
+  }
 }
 
 

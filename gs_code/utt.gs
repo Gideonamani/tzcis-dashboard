@@ -1,3 +1,6 @@
+const DEFAULT_UTT_DATE_HINT = 'DD-MM-YYYY';
+const DEFAULT_UTT_DATE_DISPLAY_FORMAT = 'dd-MM-yyyy';
+
 function scrapeUttamisFundPerformance() {
   const BASE = 'https://uttamis.co.tz';
   const FUND_PAGE = BASE + '/fund-performance';
@@ -57,7 +60,7 @@ function scrapeUttamisFundPerformance() {
   const top6 = allRows.slice(0, 6);
 
   // --- Load mapping from _config (Scheme Name -> target sheet)
-  const schemeToSheet = loadSchemeToSheetMapping_();
+  const schemeMeta = loadSchemeMetadata_();
 
   // --- Columns we pull “as is”
   const header = [
@@ -74,8 +77,8 @@ function scrapeUttamisFundPerformance() {
   // --- Write each of the 6 rows into its mapped sheet at row 2
   top6.forEach(r => {
     const scheme = safeCell_(r.sname);
-    const targetSheetName = schemeToSheet[normalizeKey_(scheme)];
-    if (!targetSheetName) {
+    const targetMeta = schemeMeta[normalizeKey_(scheme)];
+    if (!targetMeta) {
       Logger.log('No target sheet mapping for scheme: ' + scheme + ' (skipping)');
       return;
     }
@@ -90,12 +93,13 @@ function scrapeUttamisFundPerformance() {
       isoNow_()
     ];
     writeLatestRow_({
-      sheetName: targetSheetName,
+      sheetName: targetMeta.sheetName,
       headers: header,
       rowValues: row,
-      dateHint: 'DD-MM-YYYY',
+      dateHint: targetMeta.dateHint || DEFAULT_UTT_DATE_HINT,
       dateHeader: /^date\b/i,
-      scrapedHeader: /^scraped time$/i
+      scrapedHeader: /^scraped time$/i,
+      dateFormat: targetMeta.dateFormat || DEFAULT_UTT_DATE_DISPLAY_FORMAT
     });
   });
 }
@@ -103,12 +107,9 @@ function scrapeUttamisFundPerformance() {
 /* ===================== Helpers ===================== */
 
 /**
- * Build mapping: Scheme Name (from website) -> target sheet name.
- * Steps:
- *   1) Map scheme name -> fund_id   (using your fixed mapping)
- *   2) Look up fund_id in _config   (column fund_id) and read raw_sheetname
+ * Load per-scheme metadata (sheet name + date formats) from _config.
  */
-function loadSchemeToSheetMapping_() {
+function loadSchemeMetadata_() {
   // 1) Your canonical scheme -> fund_id map (from your note)
   const schemeToFundId = {
     [normalizeKey_('Bond Fund')]:          'utt.bond',
@@ -119,47 +120,53 @@ function loadSchemeToSheetMapping_() {
     [normalizeKey_('Wekeza Maisha Fund')]: 'utt.wekeza',
   };
 
-  // 2) Read _config for fund_id -> raw_sheetname
+  const defaultMeta = {};
+  Object.keys(schemeToFundId).forEach(k => {
+    defaultMeta[k] = {
+      sheetName: schemeToFundId[k],
+      dateHint: DEFAULT_UTT_DATE_HINT,
+      dateFormat: DEFAULT_UTT_DATE_DISPLAY_FORMAT
+    };
+  });
+
   const ss = SpreadsheetApp.openById(RAW_SS_ID);
   const cfg = ss.getSheetByName('_config');
-  if (!cfg) {
-    // Fallback: if _config missing, just use fund_id itself as sheet name
-    const m = {};
-    Object.keys(schemeToFundId).forEach(k => { m[k] = schemeToFundId[k]; });
-    return m;
-  }
+  if (!cfg) return defaultMeta;
 
   const rows = cfg.getDataRange().getValues();
-  if (rows.length < 2) {
-    const m = {};
-    Object.keys(schemeToFundId).forEach(k => { m[k] = schemeToFundId[k]; });
-    return m;
-  }
+  if (rows.length < 2) return defaultMeta;
 
-  // Find columns
-  const h = rows[0].map(v => String(v || '').toLowerCase().trim());
-  const idxFund       = h.indexOf('fund_id');
-  const idxRawSheet   = h.indexOf('raw_sheetname'); // <- column you mentioned
+  const header = rows[0].map(v => String(v || '').toLowerCase().trim());
+  const idxFund       = header.indexOf('fund_id');
+  const idxRawSheet   = header.indexOf('raw_sheetname');
+  const idxDateHint   = header.indexOf('date_hint');
+  const idxDateFormat = header.indexOf('date_display_format');
 
-  // Build fund_id -> raw_sheetname lookup
-  const fundToRaw = {};
+  const metaByFund = {};
   if (idxFund >= 0 && idxRawSheet >= 0) {
     for (let i = 1; i < rows.length; i++) {
       const fundId = String(rows[i][idxFund] || '').trim();
-      const rawSn  = String(rows[i][idxRawSheet] || '').trim();
-      if (fundId) fundToRaw[fundId] = rawSn || fundId; // fallback to fund_id
+      if (!fundId) continue;
+      metaByFund[fundId] = {
+        sheetName: String(rows[i][idxRawSheet] || '').trim() || fundId,
+        dateHint: idxDateHint >= 0 ? String(rows[i][idxDateHint] || '').trim() : '',
+        dateFormat: idxDateFormat >= 0 ? String(rows[i][idxDateFormat] || '').trim() : ''
+      };
     }
   }
 
-  // Compose final map: schemeName -> (raw_sheetname from _config)
-  const schemeToSheet = {};
-  Object.keys(schemeToFundId).forEach(schemeKey => {
-    const fundId = schemeToFundId[schemeKey];
-    const target = fundToRaw[fundId] || fundId; // fallback if not found
-    schemeToSheet[schemeKey] = target;
+  const result = {};
+  Object.keys(schemeToFundId).forEach(key => {
+    const fundId = schemeToFundId[key];
+    const meta = metaByFund[fundId];
+    result[key] = meta ? {
+      sheetName: meta.sheetName,
+      dateHint: meta.dateHint || DEFAULT_UTT_DATE_HINT,
+      dateFormat: meta.dateFormat || DEFAULT_UTT_DATE_DISPLAY_FORMAT
+    } : defaultMeta[key];
   });
 
-  return schemeToSheet;
+  return result;
 }
 
 
