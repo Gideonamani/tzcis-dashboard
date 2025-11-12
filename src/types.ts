@@ -60,3 +60,14 @@ export interface NavSnapshot {
   lastUpdated: string | null
   collectedAt?: string | null
 }
+
+export interface LatestFundSnapshot {
+  fundId: string
+  date: string | null
+  navTotal: number | null
+  unitsOutstanding: number | null
+  navPerUnit: number | null
+  salePrice: number | null
+  repurchasePrice: number | null
+  collectedAt: string | null
+}

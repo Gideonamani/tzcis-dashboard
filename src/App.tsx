@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react'
 import './App.css'
 import MetricCard from './components/MetricCard'
 import FundsTable from './components/FundsTable'
@@ -6,9 +6,11 @@ import ManagerFilter from './components/ManagerFilter'
 import Loader from './components/Loader'
 import NavSnapshotGrid from './components/NavSnapshotGrid'
 import Modal from './components/Modal'
+import LatestSnapshotSection from './components/LatestSnapshotSection'
 import { aggregateByManager, fetchFundData, FUNDS_CSV_URL } from './services/fundData'
 import { fetchNavSeries } from './services/navData'
-import type { FundNavSeries, FundRecord, NavSnapshot } from './types'
+import { fetchLatestFundSnapshots } from './services/latestSnapshotData'
+import type { FundNavSeries, FundRecord, NavSnapshot, LatestFundSnapshot } from './types'
 
 const ManagerAumChart = lazy(() => import('./components/ManagerAumChart'))
 const ReturnsChart = lazy(() => import('./components/ReturnsChart'))
@@ -39,6 +41,10 @@ function App() {
   const [navLoading, setNavLoading] = useState(true)
   const [navError, setNavError] = useState<string | null>(null)
   const [expandedPanel, setExpandedPanel] = useState<null | 'aum-concentration'>(null)
+  const [latestSnapshots, setLatestSnapshots] = useState<LatestFundSnapshot[]>([])
+  const [latestLoading, setLatestLoading] = useState(true)
+  const [latestError, setLatestError] = useState<string | null>(null)
+  const [latestSyncedAt, setLatestSyncedAt] = useState<Date | null>(null)
 
   useEffect(() => {
     let ignore = false
@@ -98,6 +104,26 @@ function App() {
       ignore = true
     }
   }, [])
+
+  const loadLatestSnapshots = useCallback(async () => {
+    try {
+      setLatestLoading(true)
+      setLatestError(null)
+      const snapshotRows = await fetchLatestFundSnapshots()
+      setLatestSnapshots(snapshotRows)
+      setLatestSyncedAt(new Date())
+    } catch (err) {
+      setLatestError(
+        err instanceof Error ? err.message : 'Unknown error fetching live fund data',
+      )
+    } finally {
+      setLatestLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadLatestSnapshots()
+  }, [loadLatestSnapshots])
 
   const managerOptions = useMemo(() => {
     const managers = new Set<string>()
@@ -431,6 +457,16 @@ function App() {
               <PerformanceScatterPlot data={performanceScatterData} />
             </Suspense>
           </section>
+
+          {(latestSnapshots.length || latestLoading || latestError) ? (
+            <LatestSnapshotSection
+              snapshots={latestSnapshots}
+              loading={latestLoading}
+              error={latestError}
+              lastSynced={latestSyncedAt}
+              onRetry={loadLatestSnapshots}
+            />
+          ) : null}
 
           {(navSnapshotTiles.length || navTrendSeries.length || navError || navLoading) && (
             <section className="nav-section">
