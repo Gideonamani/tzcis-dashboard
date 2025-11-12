@@ -89,32 +89,18 @@ function scrapeUttamisFundPerformance() {
       safeCell_(r.date_valued),
       isoNow_()
     ];
-    // upsertAtRow2_(targetSheetName, header, row);
-    writeLatestRow_(targetSheetName, row, header, "DD-MM-YYYY");
+    writeLatestRow_({
+      sheetName: targetSheetName,
+      headers: header,
+      rowValues: row,
+      dateHint: 'DD-MM-YYYY',
+      dateHeader: /^date\b/i,
+      scrapedHeader: /^scraped time$/i
+    });
   });
 }
 
 /* ===================== Helpers ===================== */
-
-function upsertAtRow2_(sheetName, header, row) {
-  const ss = SpreadsheetApp.openById(RAW_SS_ID);
-  let sh = ss.getSheetByName(sheetName);
-  if (!sh) sh = ss.insertSheet(sheetName);
-
-  // Ensure header
-  const range = sh.getRange(1,1,1,header.length);
-  const existingHeader = range.getValues()[0];
-  const needHeader = existingHeader.join('') === '' || existingHeader.length < header.length;
-  if (needHeader || !arraysEqual_(existingHeader, header)) {
-    range.clear();
-    range.setValues([header]);
-    sh.autoResizeColumns(1, header.length);
-  }
-
-  // Insert a blank row at position 2, push existing down
-  sh.insertRows(2, 1);
-  sh.getRange(2, 1, 1, header.length).setValues([row]);
-}
 
 /**
  * Build mapping: Scheme Name (from website) -> target sheet name.
@@ -197,4 +183,3 @@ function toForm_(obj) {
 
 function safeCell_(v) { return (v === null || v === undefined) ? '' : v; }
 function normalizeKey_(s) { return String(s || '').toLowerCase().trim(); }
-function arraysEqual_(a,b){ if(a.length!==b.length)return false; for(let i=0;i<a.length;i++){ if(String(a[i])!==String(b[i])) return false;} return true;}

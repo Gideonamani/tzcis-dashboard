@@ -41,7 +41,19 @@ function updateFromConfig_ItrustOnly() {
 
       const itrust_sheet_headers = ['Date','Net Asset Value','Units','NAV/Unit','Sale Price','Repurchase Price','Scraped Time'];
 
-      const result = writeLatestRow_(r.raw_sheetname, row, itrust_sheet_headers, r.date_hint);
+      const result = writeLatestRow_({
+        sheetName: r.raw_sheetname,
+        headers: itrust_sheet_headers,
+        rowValues: row,
+        dateHint: r.date_hint,
+        dateHeader: /^date\b/i,
+        scrapedHeader: /^scraped time$/i,
+        dateFormat: DATE_FORMAT,
+        timezone: TZ,
+        numericTolerance: NUM_TOL,
+        logQaOnInsert: LOG_QA_ON_INSERT,
+        qaLogger: logQaChange_
+      });
       if (result !== 'skipped') {
         Logger.log('%s (%s): %s', r.raw_sheetname, result.toUpperCase(), r.source_url);
       }
@@ -89,128 +101,6 @@ function fetchJson_(url) {
   if (code !== 200) throw new Error('HTTP ' + code + ' for ' + url);
   return JSON.parse(res.getContentText());
 }
-
-/**
- * Insert-at-top (row 2) only if:
- *  1) incoming.date > currentTop.date, OR
- *  2) incoming.date == currentTop.date AND any of [B..F] changed
- * On (2), also log the diffs to QA sheet.
- */
-function writeLatestRow_(sheetName, rowValues, columnHeaders, dateHint) {
-  // Globals expected to exist: RAW_SS_ID, TZ, DATE_FORMAT, NUM_TOL, LOG_QA_ON_INSERT, logQaChange_, ymd_
-  const ss = SpreadsheetApp.openById(RAW_SS_ID);
-  const sh = ss.getSheetByName(sheetName);
-  if (!sh) throw new Error('Missing destination sheet: ' + sheetName);
-
-  // --- Ensure header row matches provided columnHeaders
-  const width = columnHeaders.length;
-  const existing = sh.getRange(1, 1, 1, width).getValues()[0];
-  const headerBlank = existing.every(v => v === '' || v === null);
-
-  const sameHeader =
-    !headerBlank &&
-    existing.length === width &&
-    existing.every((v, i) => String(v).trim() === String(columnHeaders[i]).trim());
-
-  if (headerBlank || !sameHeader) {
-    sh.getRange(1, 1, 1, width).setValues([columnHeaders]);
-    sh.autoResizeColumns(1, width);
-  }
-
-  // --- Find critical columns by name
-  const header = columnHeaders.map(h => String(h || ''));
-  const dateIdx = header.findIndex(h => /^date\b/i.test(h));  // e.g., "Date", Date Valued
-  const scrapedIdx = header.findIndex(h => /^scraped time$/i.test(h));    // e.g., "Scraped Time")
-
-  const dateCol = dateIdx >= 0 ? dateIdx : 0;                             // fallback to col 0
-  const scrapedCol = scrapedIdx >= 0 ? scrapedIdx : (width - 1);          // fallback to last col
-  
-  const incomingYMD = parseDate_(rowValues[dateCol], dateHint);
-
-
-  // --- Sanity: make sure incoming values match width
-  if (rowValues.length !== width) {
-    throw new Error(`Row width mismatch: got ${rowValues.length}, expected ${width}`);
-  }
-
-  // --- Any data already?
-  const hasTopData = sh.getLastRow() >= 2 && !sh.getRange(2, 1).isBlank();
-
-  // Helper: set the Date column's number format
-  function formatDateCellAtRow2_() {
-    sh.getRange(2, dateCol + 1).setNumberFormat(DATE_FORMAT);
-  }
-
-  // --- FIRST insertion when no data exists
-  if (!hasTopData) {
-    sh.insertRows(2, 1);
-    sh.getRange(2, 1, 1, width).setValues([rowValues]);
-    // formatDateCellAtRow2_();
-
-    if (LOG_QA_ON_INSERT) {
-      const msg = `first row inserted → ${incomingYMD}`;
-      logQaChange_(sheetName, incomingYMD, 'INSERTED(FIRST)', '-', msg);
-    }
-    return 'inserted';
-  }
-
-  // --- Compare with current latest (row 2)
-  const current = sh.getRange(2, 1, 1, width).getValues()[0];
-  const currentYMD  = parseDate_(current[dateCol], dateHint);
-
-  // Newer date → insert (keep history)
-  if (incomingYMD > currentYMD) {
-    const prevDate = currentYMD;
-    const newDate  = incomingYMD;
-
-    sh.insertRows(2, 1);
-    sh.getRange(2, 1, 1, width).setValues([rowValues]);
-    // formatDateCellAtRow2_();
-
-    if (LOG_QA_ON_INSERT) {
-      const msg = `new latest date: ${prevDate} → ${newDate}`;
-      logQaChange_(sheetName, incomingYMD, 'INSERTED', '-', msg);
-    }
-    return 'inserted';
-  }
-
-  // Older date → ignore
-  if (incomingYMD < currentYMD) return 'skipped';
-
-  // Same date → compare columns between Date and Scraped Time (exclusive of Scraped Time)
-  const startC = dateCol + 1;                 // first data col after "Date"
-  const endC   = Math.max(startC, scrapedCol); // compare up to the column before "Scraped Time"
-  const diffs = [];
-
-  for (let c = startC; c < endC; c++) {
-    const oldVal = current[c];
-    const newVal = rowValues[c];
-    const nOld = Number(String(oldVal).replace(/[, ]+/g, ''));
-    const nNew = Number(String(newVal).replace(/[, ]+/g, ''));
-    const bothNumeric = isFinite(nOld) && isFinite(nNew);
-    const equal = bothNumeric
-      ? Math.abs(nOld - nNew) <= NUM_TOL
-      : String(oldVal) === String(newVal);
-    if (!equal) diffs.push({ col: header[c], oldVal, newVal });
-  }
-
-  if (diffs.length) {
-    // Overwrite row 2 (same date, changed values)
-    sh.getRange(2, 1, 1, width).setValues([rowValues]);
-    // formatDateCellAtRow2_();
-
-    const changedCols = diffs.map(d => d.col).join(', ');
-    const details = diffs.map(d => `${d.col}: ${d.oldVal} → ${d.newVal}`).join(' | ');
-    logQaChange_(sheetName, incomingYMD, 'OVERWRITTEN', changedCols, details);
-    return 'overwritten';
-  }
-
-  // Same date + no changes
-  return 'skipped';
-}
-
-
-
 
 /***** HELPERS *****/
 // QA logger: one row per event, includes action ("INSERTED"/"OVERWRITTEN")
