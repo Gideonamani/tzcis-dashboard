@@ -7,6 +7,38 @@ import './InteractiveDashboard.css'
 
 type ThemeMode = 'dark' | 'light'
 
+const THEME_TOKENS: Record<
+  ThemeMode,
+  {
+    background: string
+    panelBackground: string
+    panelBorder: string
+    textDefault: string
+    textMuted: string
+    accent: string
+    accentStrong: string
+  }
+> = {
+  dark: {
+    background: '#050819',
+    panelBackground: '#131c31',
+    panelBorder: 'rgba(148, 163, 184, 0.2)',
+    textDefault: '#f1f5f9',
+    textMuted: '#94a3b8',
+    accent: '#818cf8',
+    accentStrong: '#a78bfa',
+  },
+  light: {
+    background: '#f5f7fb',
+    panelBackground: '#ffffff',
+    panelBorder: 'rgba(15, 23, 42, 0.08)',
+    textDefault: '#0f172a',
+    textMuted: '#475569',
+    accent: '#6366f1',
+    accentStrong: '#4c1d95',
+  },
+}
+
 const QUICK_RANGES: Array<{ label: string; value: number | 'max' }> = [
   { label: '30d', value: 30 },
   { label: '90d', value: 90 },
@@ -206,7 +238,7 @@ const InteractiveDashboard = () => {
     try {
       const dataUrl = await toPng(chartRef.current, {
         cacheBust: true,
-        backgroundColor: theme === 'dark' ? '#0b1222' : '#f5f5f5',
+        backgroundColor: THEME_TOKENS[theme].background,
       })
       const link = document.createElement('a')
       link.href = dataUrl
@@ -252,6 +284,7 @@ const InteractiveDashboard = () => {
   const lastDataPoint = filteredPoints[filteredPoints.length - 1]
 
   const themeToggleLabel = theme === 'dark' ? 'Dark mode' : 'Light mode'
+  const themeColors = THEME_TOKENS[theme]
 
   return (
     <div className="interactive-page" data-theme={theme}>
@@ -410,25 +443,25 @@ const InteractiveDashboard = () => {
                   {chartData.length ? (
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                        <CartesianGrid stroke="var(--panel-border)" strokeDasharray="3 3" />
+                        <CartesianGrid stroke={themeColors.panelBorder} strokeDasharray="3 3" />
                         <XAxis
                           dataKey="date"
-                          tick={{ fill: 'var(--text-muted)', fontSize: 12 }}
+                          tick={{ fill: themeColors.textMuted, fontSize: 12 }}
                           tickFormatter={(value) =>
                             formatDisplayDate(value, { day: '2-digit', month: 'short' })
                           }
                         />
                         <YAxis
-                          tick={{ fill: 'var(--text-muted)', fontSize: 12 }}
+                          tick={{ fill: themeColors.textMuted, fontSize: 12 }}
                           domain={['auto', 'auto']}
                           width={70}
                         />
                         <Tooltip
                           contentStyle={{
-                            backgroundColor: 'var(--panel-bg)',
-                            border: '1px solid var(--panel-border)',
+                            backgroundColor: themeColors.panelBackground,
+                            border: `1px solid ${themeColors.panelBorder}`,
                             borderRadius: '0.5rem',
-                            color: 'var(--text-default)',
+                            color: themeColors.textDefault,
                           }}
                           formatter={(value: number | string | Array<number | string>) => {
                             const resolvedValue = Array.isArray(value)
@@ -453,10 +486,10 @@ const InteractiveDashboard = () => {
                         <Line
                           type="monotone"
                           dataKey="nav"
-                          stroke="var(--accent)"
+                          stroke={themeColors.accent}
                           strokeWidth={2}
                           dot={false}
-                          activeDot={{ r: 4, fill: 'var(--accent-strong)' }}
+                          activeDot={{ r: 4, fill: themeColors.accentStrong }}
                         />
                       </LineChart>
                     </ResponsiveContainer>
