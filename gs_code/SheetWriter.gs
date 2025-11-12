@@ -26,7 +26,8 @@ function writeLatestRow_(opts) {
     timezone = (typeof TZ === 'string' && TZ) || Session.getScriptTimeZone() || 'UTC',
     numericTolerance = typeof NUM_TOL === 'number' ? NUM_TOL : 0,
     logQaOnInsert = typeof LOG_QA_ON_INSERT === 'boolean' ? LOG_QA_ON_INSERT : false,
-    qaLogger = typeof logQaChange_ === 'function' ? logQaChange_ : null
+    qaLogger = typeof logQaChange_ === 'function' ? logQaChange_ : null,
+    ignoreColumns = []
   } = opts;
 
   if (!sheetId) throw new Error('writeLatestRow_: sheetId missing (pass opts.sheetId or set RAW_SS_ID).');
@@ -49,6 +50,7 @@ function writeLatestRow_(opts) {
   const dateCol = findColumnIdx_(headerNorm, dateHeader);
   if (dateCol < 0) throw new Error('writeLatestRow_: unable to locate Date column.');
   const scrapedCol = findColumnIdx_(headerNorm, scrapedHeader);
+  const ignoreIdxSet = new Set(resolveColumnIndexes_(headerNorm, ignoreColumns));
   if (rowValues.length !== width) {
     throw new Error(`writeLatestRow_: row width mismatch (got ${rowValues.length}, expected ${width}).`);
   }
@@ -94,9 +96,9 @@ function writeLatestRow_(opts) {
     return 'skipped';
   }
 
-  const endCompare = scrapedCol >= 0 ? scrapedCol : width;
   const diffs = [];
-  for (let c = dateCol + 1; c < endCompare; c++) {
+  for (let c = 0; c < width; c++) {
+    if (c === dateCol || c === scrapedCol || ignoreIdxSet.has(c)) continue;
     if (!valuesEqual_(current[c], rowValues[c], numericTolerance)) {
       diffs.push({ col: headers[c], oldVal: current[c], newVal: rowValues[c] });
     }
@@ -135,6 +137,26 @@ function findColumnIdx_(headerNorm, target) {
   let idx = headerNorm.findIndex(h => h === want);
   if (idx > -1) return idx;
   return headerNorm.findIndex(h => h.indexOf(want) === 0);
+}
+
+function resolveColumnIndexes_(headerNorm, entries) {
+  if (!Array.isArray(entries)) return [];
+  const out = [];
+  entries.forEach(entry => {
+    if (typeof entry === 'number') {
+      if (entry >= 0 && entry < headerNorm.length) out.push(entry);
+      return;
+    }
+    if (entry instanceof RegExp) {
+      const idx = headerNorm.findIndex(h => entry.test(h));
+      if (idx > -1) out.push(idx);
+      return;
+    }
+    const want = sheetWriterNorm_(entry);
+    const idx = headerNorm.findIndex(h => h === want);
+    if (idx > -1) out.push(idx);
+  });
+  return out;
 }
 
 function parseDateForComparison_(value, hint, timezone) {
