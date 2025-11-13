@@ -5,10 +5,12 @@ import OverviewDashboard from './pages/OverviewDashboard'
 import InteractiveDashboard from './pages/InteractiveDashboard'
 import LoaderShowcase from './pages/LoaderShowcase'
 
+const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
+
 function App() {
   return (
     <ThemeProvider>
-      <BrowserRouter>
+      <BrowserRouter basename={basename}>
         <Routes>
           <Route element={<AppLayout />}>
             <Route path="/" element={<OverviewDashboard />} />
