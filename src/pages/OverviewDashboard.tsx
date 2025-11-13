@@ -386,7 +386,9 @@ function OverviewDashboard() {
         />
       </section>
 
-      {fundsLoading ? <Loader message="Loading fund data…" /> : null}
+      {fundsLoading ? (
+        <Loader variant="page" message="Loading Google Sheets data…" />
+      ) : null}
 
       {error ? (
         <div className="dashboard__state dashboard__state--error">

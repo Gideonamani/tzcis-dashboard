@@ -952,30 +952,121 @@
 
 .loader {
   display: inline-flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  border-radius: 999px;
-  background: var(--color-surface-muted);
-  color: var(--color-text-body);
-  font-weight: 600;
 }
 
-.loader__spinner {
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  border: 2px solid rgba(92, 72, 255, 0.3);
-  border-top-color: var(--color-primary);
-  animation: spin 0.7s linear infinite;
+.loader__content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-soft);
+  color: var(--color-text-body);
+  width: fit-content;
+}
+
+.loader--page {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at top, rgba(5, 8, 22, 0.75), rgba(5, 8, 22, 0.9));
+  backdrop-filter: blur(6px);
+}
+
+.loader--page .loader__content {
+  width: min(360px, calc(100vw - 2rem));
+  justify-content: center;
+  box-shadow: var(--shadow-card);
+}
+
+.loader__viz {
+  position: relative;
+  width: 96px;
+  height: 96px;
+}
+
+.loader__map {
+  position: absolute;
+  inset: 0;
+  color: var(--color-text-soft);
+  opacity: 0.1;
+  animation: loaderMapPulse 2.4s ease-in-out infinite;
+}
+
+.loader__bars {
+  position: absolute;
+  inset: auto 18px 18px 18px;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.loader__bar {
+  flex: 1;
+  height: 32px;
+  border-radius: 8px 8px 2px 2px;
+  background: linear-gradient(180deg, var(--color-primary), var(--color-accent));
+  animation: loaderBarPulse 0.9s ease-in-out infinite;
+  transform-origin: bottom;
+  opacity: 0.7;
+}
+
+.loader__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.loader__eyebrow {
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.24em;
+  color: var(--color-text-soft);
 }
 
 .loader__label {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text-strong);
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+@media (max-width: 520px) {
+  .loader__content {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@keyframes loaderBarPulse {
+  0% {
+    transform: scaleY(0.35);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scaleY(0.4);
+    opacity: 0.55;
+  }
+}
+
+@keyframes loaderMapPulse {
+  0% {
+    opacity: 0.1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0.1;
   }
 }
