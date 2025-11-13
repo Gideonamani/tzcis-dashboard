@@ -12,8 +12,6 @@ import { fetchNavSeries } from '../services/navData'
 import { fetchLatestFundSnapshots } from '../services/latestSnapshotData'
 import type { FundNavSeries, FundRecord, NavSnapshot, LatestFundSnapshot } from '../types'
 
-const HOME_LOADER_INSPECTION_MS = 20000
-
 const ManagerAumChart = lazy(() => import('../components/ManagerAumChart'))
 const ReturnsChart = lazy(() => import('../components/ReturnsChart'))
 const NavTrendChart = lazy(() => import('../components/NavTrendChart'))
@@ -47,10 +45,10 @@ function OverviewDashboard() {
   const [latestLoading, setLatestLoading] = useState(true)
   const [latestError, setLatestError] = useState<string | null>(null)
   const [latestSyncedAt, setLatestSyncedAt] = useState<Date | null>(null)
-  const [loaderHold, setLoaderHold] = useState(true)
+  const [loaderGraceDone, setLoaderGraceDone] = useState(false)
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setLoaderHold(false), HOME_LOADER_INSPECTION_MS)
+    const timer = window.setTimeout(() => setLoaderGraceDone(true), 400)
     return () => window.clearTimeout(timer)
   }, [])
 
@@ -361,9 +359,10 @@ function OverviewDashboard() {
     return latest
   }, [navSnapshots])
 
-  const showPageLoader = !error && (fundsLoading || loaderHold)
+  const criticalLoading = fundsLoading || navLoading || latestLoading
+  const showPageLoader = !error && (!loaderGraceDone || criticalLoading)
 
-  const showContent = !fundsLoading && !loaderHold && !error
+  const showContent = !error && loaderGraceDone && !criticalLoading
 
   return (
     <div className="dashboard">
