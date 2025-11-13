@@ -43,6 +43,15 @@ const PIPELINE_PARSE = {
   dependsOnMaxAgeMinutes: 120      // collectors must be fresh within ~2 hours
 };
 
+const PIPELINE_LATEST = {
+  id: 'latest',
+  label: 'Refresh latest fund snapshots',
+  handler: 'refreshLatestFundDataSheet',
+  intervalMinutes: 360,
+  dependsOn: ['parse'],
+  dependsOnMaxAgeMinutes: 60
+};
+
 /***** PUBLIC ENTRY POINTS ****************************************************/
 
 /**
@@ -153,7 +162,7 @@ function stepDue_(step, props, now) {
 }
 
 function getAllPipelineSteps_() {
-  return PIPELINE_COLLECTORS.concat([PIPELINE_PARSE]);
+  return PIPELINE_COLLECTORS.concat([PIPELINE_PARSE, PIPELINE_LATEST]);
 }
 
 function stepKey_(id) {
