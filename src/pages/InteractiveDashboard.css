@@ -13,7 +13,7 @@
   --input-bg: var(--interactive-input-bg);
   --shadow: var(--interactive-shadow);
   min-height: 100vh;
-  padding: 1.5rem;
+  padding: clamp(1rem, 4vw, 2.25rem);
   background-color: var(--page-bg);
   color: var(--text-default);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -193,9 +193,16 @@
 }
 
 .interactive-page__content {
-  display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 1.25rem;
+}
+
+@media (min-width: 960px) {
+  .interactive-page__content {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  }
 }
 
 .interactive-page .panel {
@@ -295,11 +302,14 @@
   border: 0;
 }
 
-@media (max-width: 960px) {
-  .interactive-page__content {
-    grid-template-columns: 1fr;
+@media (min-width: 960px) {
+  .interactive-page .panel--chart,
+  .interactive-page .panel--table {
+    min-height: 420px;
   }
+}
 
+@media (max-width: 959px) {
   .interactive-page .panel--chart,
   .interactive-page .panel--table {
     min-height: unset;
@@ -308,5 +318,4 @@
   .interactive-page .chart-wrapper {
     height: 300px;
   }
-
 }
