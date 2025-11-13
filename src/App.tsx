@@ -5,7 +5,10 @@ import OverviewDashboard from './pages/OverviewDashboard'
 import InteractiveDashboard from './pages/InteractiveDashboard'
 import LoaderShowcase from './pages/LoaderShowcase'
 
-const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
+const basename =
+  import.meta.env.BASE_URL && import.meta.env.BASE_URL !== '/'
+    ? import.meta.env.BASE_URL.replace(/\/$/, '')
+    : '/'
 
 function App() {
   return (
