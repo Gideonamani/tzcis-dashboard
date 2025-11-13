@@ -12,6 +12,8 @@ import { fetchNavSeries } from '../services/navData'
 import { fetchLatestFundSnapshots } from '../services/latestSnapshotData'
 import type { FundNavSeries, FundRecord, NavSnapshot, LatestFundSnapshot } from '../types'
 
+const HOME_LOADER_INSPECTION_MS = 20000
+
 const ManagerAumChart = lazy(() => import('../components/ManagerAumChart'))
 const ReturnsChart = lazy(() => import('../components/ReturnsChart'))
 const NavTrendChart = lazy(() => import('../components/NavTrendChart'))
@@ -45,6 +47,12 @@ function OverviewDashboard() {
   const [latestLoading, setLatestLoading] = useState(true)
   const [latestError, setLatestError] = useState<string | null>(null)
   const [latestSyncedAt, setLatestSyncedAt] = useState<Date | null>(null)
+  const [loaderHold, setLoaderHold] = useState(true)
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setLoaderHold(false), HOME_LOADER_INSPECTION_MS)
+    return () => window.clearTimeout(timer)
+  }, [])
 
   useEffect(() => {
     let ignore = false
@@ -353,7 +361,9 @@ function OverviewDashboard() {
     return latest
   }, [navSnapshots])
 
-  const showContent = !fundsLoading && !error
+  const showPageLoader = !error && (fundsLoading || loaderHold)
+
+  const showContent = !fundsLoading && !loaderHold && !error
 
   return (
     <div className="dashboard">
@@ -386,7 +396,7 @@ function OverviewDashboard() {
         />
       </section>
 
-      {fundsLoading ? (
+      {showPageLoader ? (
         <Loader variant="page" message="Loading Google Sheets data…" />
       ) : null}
 

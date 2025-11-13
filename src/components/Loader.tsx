@@ -1,4 +1,4 @@
-const BAR_COUNT = 4
+const THEME_BAR_OFFSETS = [22, 34, 46, 58]
 
 interface LoaderProps {
   message?: string
@@ -10,30 +10,22 @@ const Loader = ({ message = 'Loading data…', variant = 'inline' }: LoaderProps
 
   return (
     <div className={className} role="status" aria-live="polite">
-      <div className="loader__content">
-        <div className="loader__viz" aria-hidden="true">
-          <svg className="loader__map" viewBox="0 0 240 260" fill="none">
-            <path
-              d="M70 18h90l52 62-14 33 32 74-60 54-92-10L38 162 14 118l10-48 16-10 3-25Z"
-              stroke="currentColor"
-              strokeWidth="6"
-              strokeLinejoin="round"
-              strokeLinecap="round"
-            />
-          </svg>
-          <div className="loader__bars">
-            {Array.from({ length: BAR_COUNT }).map((_, idx) => (
+      <div className="loader__content loader__content--immersive">
+        <div className="loader-themeMap loader-themeMap--app">
+          <div className="loader-themeMap__halo" aria-hidden="true" />
+          <div className="loader-themeMap__map" aria-hidden="true">
+            {THEME_BAR_OFFSETS.map((offset, idx) => (
               <span
                 key={`loader-bar-${idx}`}
-                className="loader__bar"
-                style={{ animationDelay: `${idx * 0.12}s` }}
+                className="loader-themeMap__bar"
+                style={{ animationDelay: `${idx * 0.16}s`, left: `${offset}%` }}
               />
             ))}
           </div>
-        </div>
-        <div className="loader__text">
-          <span className="loader__eyebrow">Preparing insights</span>
-          <span className="loader__label">{message}</span>
+          <div className="loader-themeMap__meta">
+            <span className="loader__eyebrow">Preparing insights</span>
+            <span className="loader__label">{message}</span>
+          </div>
         </div>
       </div>
     </div>
