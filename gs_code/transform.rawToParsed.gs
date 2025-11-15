@@ -1,4 +1,8 @@
-/***** CONFIG *****************************************************************/
+/***** CONFIG *****************************************************************
+ * Default incremental parsing now looks only at RAW row 2 (the latest scrape)
+ * to cut down on Apps Script runtime. Call processAllFundsFullScan() from the
+ * UI when you need a full sweep of every RAW row (e.g. brand-new funds).
+ *****************************************************************************/
 const RAW_SS_ID     = '11YdBfyArmS3V2l2-oSwkyFeuzW1lKvzgPQIg5Sihfog';
 const PARSED_SS_ID  = '1zoxwNR8OZUvNwd6NOvJhtWu8-DiWvPkTrpZ_DzWecUM';
 const CONFIG_SHEET  = '_config';
@@ -11,7 +15,8 @@ const CANON_HEADER = [
 ];
 
 /***** ORCHESTRATOR ************************************************************/
-function processAllFunds() {
+function processAllFunds(opts) {
+  const fullScan = !!(opts && opts.fullScan);
   const t0 = Date.now();
   const rawSS    = SpreadsheetApp.openById(RAW_SS_ID);
   const parsedSS = SpreadsheetApp.openById(PARSED_SS_ID);
@@ -38,7 +43,7 @@ function processAllFunds() {
         const res = initialParsing(c, rawSS, parsedSS);
         Logger.log(`INITIAL ${c.fund_id}: appended=${res.appended}`);
       } else {
-        const res = newLinesParse(c, rawSS, parsedSS);
+        const res = newLinesParse(c, rawSS, parsedSS, { fullScan });
         Logger.log(`INCR ${c.fund_id}: maxDate=${res.maxDate} appended=${res.appended}`);
       }
       done++;
@@ -48,6 +53,15 @@ function processAllFunds() {
     }
   }
   Logger.log(`processAllFunds: finished=${done}, failures=${fail}`);
+}
+
+/***** UI HELPER ***************************************************************/
+/**
+ * Manual helper for the GUI: forces a full sweep over every RAW row so the
+ * parser can re-check older data (useful after onboarding a fund).
+ */
+function processAllFundsFullScan() {
+  processAllFunds({ fullScan: true });
 }
 
 /***** PREFLIGHT ***************************************************************/
@@ -95,7 +109,8 @@ function initialParsing(c, rawSS, parsedSS) {
 }
 
 /***** PHASE 2: INCREMENTAL NEW-LINES ******************************************/
-function newLinesParse(c, rawSS, parsedSS) {
+function newLinesParse(c, rawSS, parsedSS, opts) {
+  const forceFullScan = !!(opts && opts.fullScan);
   const rawSh = rawSS.getSheetByName(c.raw_sheetname);
   const lastRow = rawSh.getLastRow(), lastCol = rawSh.getLastColumn();
   if (lastRow < 2) return { appended: 0, maxDate: '' };
@@ -112,6 +127,12 @@ function newLinesParse(c, rawSS, parsedSS) {
   }
 
   const header = rawSh.getRange(1,1,1,lastCol).getValues()[0].map(h => String(h||''));
+  if (!forceFullScan) {
+    const topRow = rawSh.getRange(2,1,1,lastCol).getValues()[0];
+    const fast = tryFastRowIncrement_(c, header, topRow, ps, { maxDate, existing });
+    if (fast.handled) return fast.result;
+  }
+
   const block  = rawSh.getRange(2,1,lastRow-1,lastCol).getValues();
   const hint   = (c.date_hint || 'DMY').toUpperCase();
   const newer  = [];
@@ -141,6 +162,28 @@ function newLinesParse(c, rawSS, parsedSS) {
   ensureParsedSortedAndUnique_(ps); // enforce invariant
 
   return { appended: newer.length, maxDate };
+}
+
+function tryFastRowIncrement_(c, header, row, ps, state) {
+  if (!row || !row.length) {
+    return { handled: false };
+  }
+  const maxDate = state && state.maxDate ? state.maxDate : '';
+  const existing = (state && state.existing) || new Set();
+  const hint = (c.date_hint || 'DMY').toUpperCase();
+  const dateISO = parseDate_(getCellByTitle_(row, header, c.raw_date_columntitle), hint);
+  if (!dateISO) {
+    return { handled: false };
+  }
+  if ((maxDate && dateISO <= maxDate) || existing.has(dateISO)) {
+    return { handled: true, result: { appended: 0, maxDate } };
+  }
+  const canon = buildCanonRow_(c, header, row);
+  if (!canon) {
+    return { handled: false };
+  }
+  appendCanonRows_(ps, [canon]);
+  return { handled: true, result: { appended: 1, maxDate } };
 }
 
 /***** INVARIANT: UNIQUE (BY DATE) + ASCENDING *********************************/
