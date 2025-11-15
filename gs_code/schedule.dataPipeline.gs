@@ -102,6 +102,11 @@ function runPipelineInternal_(opts) {
   const now = Date.now();
   const logs = [];
 
+  if (!force && pipelinePausedForWeekend_()) {
+    Logger.log('Pipeline paused: outside trading window (Sat 00:00 → Mon 08:00).');
+    return;
+  }
+
   getAllPipelineSteps_().forEach(step => {
     const { message } = maybeRunPipelineStep_(step, props, now, force);
     logs.push(message);
@@ -176,4 +181,14 @@ function invokeHandler_(name) {
     throw new Error(`Handler '${name}' is not defined in the project.`);
   }
   return fn();
+}
+
+function pipelinePausedForWeekend_() {
+  const tz = Session.getScriptTimeZone && Session.getScriptTimeZone() || 'UTC';
+  const now = new Date();
+  const dow = Number(Utilities.formatDate(now, tz, 'u')); // 1=Mon .. 7=Sun
+  const hour = Number(Utilities.formatDate(now, tz, 'H')); // 0-23 local hour
+  if (dow === 6 || dow === 7) return true;         // Saturday/Sunday
+  if (dow === 1 && hour < 8) return true;          // Monday before 08:00
+  return false;
 }
