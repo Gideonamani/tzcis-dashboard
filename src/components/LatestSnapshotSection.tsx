@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts'
 
-import Loader from './Loader'
+import Skeleton from './Skeleton'
 import type { LatestFundSnapshot } from '../types'
 
 interface LatestSnapshotSectionProps {
@@ -90,6 +90,7 @@ const spreadClassName = (spread: number | null) => {
 
 const LatestSnapshotSection = ({ snapshots, loading, error, lastSynced, onRetry }: LatestSnapshotSectionProps) => {
   const [searchTerm, setSearchTerm] = useState('')
+  const showInitialSkeleton = loading && !snapshots.length
 
   const summary = useMemo(() => {
     if (!snapshots.length) {
@@ -194,12 +195,19 @@ const LatestSnapshotSection = ({ snapshots, loading, error, lastSynced, onRetry 
         </div>
       ) : null}
 
-      {loading ? (
-        <Loader message="Syncing latest fund data…" />
+      {showInitialSkeleton ? (
+        <LatestSnapshotSkeleton />
       ) : !snapshots.length ? (
         <div className="latest-section__empty">No data returned from the live snapshot feed.</div>
       ) : (
         <>
+          {loading ? (
+            <div className="latest-section__updating" aria-live="polite">
+              <span className="sr-only">Refreshing live snapshot data…</span>
+              <Skeleton width="140px" height="12px" className="skeleton--pill" />
+            </div>
+          ) : null}
+
           <div className="snapshot-metrics">
             <article className="snapshot-metric">
               <span className="snapshot-metric__label">Aggregate NAV</span>
@@ -365,5 +373,36 @@ const LatestSnapshotSection = ({ snapshots, loading, error, lastSynced, onRetry 
     </section>
   )
 }
+
+const LatestSnapshotSkeleton = () => (
+  <div className="latest-skeleton">
+    <div className="snapshot-metrics">
+      {Array.from({ length: 4 }).map((_, idx) => (
+        <article key={`snapshot-metric-skeleton-${idx}`} className="snapshot-metric snapshot-metric--skeleton">
+          <Skeleton width="50%" height="12px" />
+          <Skeleton width="70%" height="26px" />
+          <Skeleton width="60%" height="12px" />
+        </article>
+      ))}
+    </div>
+
+    <div className="snapshot-controls snapshot-controls--skeleton">
+      <div className="snapshot-search snapshot-search--skeleton">
+        <Skeleton width="40%" height="12px" />
+        <Skeleton width="100%" height="42px" />
+      </div>
+      <Skeleton width="30%" height="14px" className="skeleton--pill" />
+    </div>
+
+    <div className="snapshot-charts snapshot-charts--skeleton">
+      {Array.from({ length: 2 }).map((_, idx) => (
+        <div key={`snapshot-chart-skeleton-${idx}`} className="snapshot-chart snapshot-chart--skeleton">
+          <Skeleton width="35%" height="14px" />
+          <Skeleton width="100%" height="220px" />
+        </div>
+      ))}
+    </div>
+  </div>
+)
 
 export default LatestSnapshotSection

@@ -7,6 +7,7 @@ import Loader from '../components/Loader'
 import NavSnapshotGrid from '../components/NavSnapshotGrid'
 import Modal from '../components/Modal'
 import LatestSnapshotSection from '../components/LatestSnapshotSection'
+import Skeleton from '../components/Skeleton'
 import { aggregateByManager, fetchFundData, FUNDS_CSV_URL } from '../services/fundData'
 import { fetchNavSeries } from '../services/navData'
 import { fetchLatestFundSnapshots } from '../services/latestSnapshotData'
@@ -27,7 +28,10 @@ const ChartFallback = ({ title, helper }: { title: string; helper?: string }) =>
       <h2>{title}</h2>
       {helper ? <span className="panel__helper">{helper}</span> : null}
     </div>
-    <div className="panel__empty">Loading visualization…</div>
+    <div className="panel__skeleton">
+      <Skeleton height="220px" />
+      <Skeleton width="65%" height="18px" className="skeleton--pill" />
+    </div>
   </div>
 )
 
@@ -337,6 +341,8 @@ function OverviewDashboard() {
     return ranked.map(({ latestNavTotal, ...rest }) => rest)
   }, [navSeries])
 
+  const showNavSkeleton = navLoading && !navSnapshotTiles.length && !navTrendSeries.length
+
   const navPriceSnapshots = useMemo(() => {
     return [...navSnapshots]
       .filter((snapshot) => snapshot.salePrice !== null || snapshot.repurchasePrice !== null)
@@ -491,6 +497,11 @@ function OverviewDashboard() {
                     <span className="nav-section__status--error">
                       Unable to load NAV feed: {navError}
                     </span>
+                  ) : showNavSkeleton ? (
+                    <>
+                      <span className="sr-only">Syncing NAV history…</span>
+                      <Skeleton width="180px" height="14px" className="skeleton--pill" />
+                    </>
                   ) : navLoading ? (
                     <span>Syncing NAV history…</span>
                   ) : latestNavUpdate ? (
@@ -508,18 +519,55 @@ function OverviewDashboard() {
                 </div>
               </div>
 
-              {navSnapshotTiles.length ? (
-                <NavSnapshotGrid snapshots={navSnapshotTiles} />
-              ) : null}
+              {showNavSkeleton ? (
+                <>
+                  <div className="nav-skeleton__grid">
+                    {Array.from({ length: 3 }).map((_, idx) => (
+                      <div key={`nav-skeleton-card-${idx}`} className="nav-skeleton-card">
+                        <Skeleton width="50%" height="14px" />
+                        <Skeleton width="80%" height="26px" />
+                        <div className="nav-skeleton-card__stats">
+                          {Array.from({ length: 4 }).map((__, statIdx) => (
+                            <Skeleton key={`nav-skeleton-stat-${idx}-${statIdx}`} height="12px" />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
 
-              <div className="charts-grid nav-charts-grid">
-                <Suspense fallback={<ChartFallback title="NAV per unit trend" />}>
-                  <NavTrendChart series={navTrendSeries} />
-                </Suspense>
-                <Suspense fallback={<ChartFallback title="Sale vs repurchase window" />}>
-                  <NavPriceSpreadChart snapshots={navPriceSnapshots} />
-                </Suspense>
-              </div>
+                  <div className="charts-grid nav-charts-grid">
+                    {['NAV per unit trend', 'Sale vs repurchase window'].map((title) => (
+                      <div
+                        key={`nav-skeleton-chart-${title}`}
+                        className="panel panel--loading nav-chart-skeleton"
+                      >
+                        <div className="panel__header">
+                          <h2>{title}</h2>
+                        </div>
+                        <div className="panel__skeleton">
+                          <Skeleton height="220px" />
+                          <Skeleton width="55%" height="16px" className="skeleton--pill" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
+                  {navSnapshotTiles.length ? (
+                    <NavSnapshotGrid snapshots={navSnapshotTiles} />
+                  ) : null}
+
+                  <div className="charts-grid nav-charts-grid">
+                    <Suspense fallback={<ChartFallback title="NAV per unit trend" />}>
+                      <NavTrendChart series={navTrendSeries} />
+                    </Suspense>
+                    <Suspense fallback={<ChartFallback title="Sale vs repurchase window" />}>
+                      <NavPriceSpreadChart snapshots={navPriceSnapshots} />
+                    </Suspense>
+                  </div>
+                </>
+              )}
             </section>
           )}
 
