@@ -1,0 +1,1485 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TZ Funds Canvas · Standalone Sample</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        font-family: 'Inter', 'Space Grotesk', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.5;
+        font-weight: 400;
+        color: #0c1024;
+        background-color: #f3f5fb;
+        --color-bg: #f3f5fb;
+        --color-surface: #ffffff;
+        --color-surface-muted: #f8f8ff;
+        --color-border: rgba(18, 22, 54, 0.12);
+        --color-text-strong: #0c1024;
+        --color-text-muted: #5b6280;
+        --color-text-soft: #8a90b2;
+        --color-primary: #5c48ff;
+        --color-primary-strong: #4333e8;
+        --color-positive: #22c55e;
+        --color-negative: #ef4444;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--color-bg);
+        color: var(--color-text-strong);
+      }
+
+      #root {
+        min-height: 100vh;
+      }
+
+      .sample-page {
+        min-height: 100%;
+        background: var(--color-bg);
+        padding: clamp(1.5rem, 3vw, 3rem);
+      }
+
+      .sample-page__inner {
+        margin: 0 auto;
+        max-width: 1200px;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+
+      .sample-hero {
+        background: var(--color-surface);
+        border-radius: 24px;
+        border: 1px solid var(--color-border);
+        padding: clamp(1.5rem, 4vw, 2.5rem);
+        box-shadow: 0 30px 60px -40px rgba(16, 18, 38, 0.35);
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+
+      .sample-hero h1 {
+        margin: 0.4rem 0;
+        font-size: clamp(1.75rem, 3vw, 2.4rem);
+      }
+
+      .sample-hero p {
+        margin: 0;
+        color: var(--color-text-muted);
+        max-width: 60ch;
+      }
+
+      .sample-eyebrow {
+        color: var(--color-primary-strong);
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.2em;
+        font-weight: 600;
+        margin: 0;
+      }
+
+      .sample-hero__tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      .sample-card {
+        background: var(--color-surface);
+        border-radius: 24px;
+        border: 1px solid var(--color-border);
+        padding: 1.75rem;
+        box-shadow: 0 20px 40px -35px rgba(18, 22, 54, 0.4);
+      }
+
+      .sample-card__header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        justify-content: space-between;
+        margin-bottom: 1.25rem;
+      }
+
+      .sample-card__title {
+        margin: 0;
+        font-size: 1.2rem;
+      }
+
+      .sample-card__subtitle {
+        margin: 0;
+        font-size: 0.75rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--color-text-soft);
+      }
+
+      .sample-tab-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+      }
+
+      .sample-tab {
+        border-radius: 999px;
+        border: 1px solid var(--color-border);
+        padding: 0.35rem 0.9rem;
+        font-size: 0.8rem;
+        background: var(--color-surface);
+        color: var(--color-text-muted);
+        cursor: pointer;
+        transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+      }
+
+      .sample-tab.is-active {
+        background: var(--color-primary);
+        color: #fff;
+        border-color: var(--color-primary);
+        box-shadow: 0 6px 18px -10px rgba(92, 72, 255, 0.9);
+      }
+
+      .sample-artifact {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+
+      .sample-artifact--split {
+        flex-direction: column;
+      }
+
+      .sample-artifact__aside {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .sample-artifact__visual {
+        flex: 1.5;
+        min-height: 220px;
+        height: 260px;
+      }
+
+      .sample-artifact__visual--tall {
+        min-height: 320px;
+        height: 360px;
+      }
+
+      .sample-label {
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        letter-spacing: 0.2em;
+        color: var(--color-text-soft);
+        margin: 0;
+      }
+
+      .sample-stat {
+        font-size: 2.4rem;
+        margin: 0;
+        font-weight: 600;
+      }
+
+      .sample-stat--sm {
+        font-size: 1.4rem;
+      }
+
+      .sample-delta {
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin: 0;
+      }
+
+      .sample-delta.is-positive {
+        color: var(--color-positive);
+      }
+
+      .sample-delta.is-negative {
+        color: var(--color-negative);
+      }
+
+      .sample-helper-text,
+      .sample-caption,
+      .sample-description {
+        font-size: 0.85rem;
+        color: var(--color-text-soft);
+        margin: 0;
+        line-height: 1.5;
+      }
+
+      .sample-description {
+        font-size: 0.95rem;
+        color: var(--color-text-muted);
+      }
+
+      .sample-placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        font-size: 0.85rem;
+        color: var(--color-text-soft);
+        text-align: center;
+        border: 1px dashed var(--color-border);
+        border-radius: 20px;
+        padding: 1rem;
+        background: var(--color-surface-muted);
+      }
+
+      .sample-chart {
+        height: 280px;
+      }
+
+      .sample-chart--fill {
+        height: 100%;
+      }
+
+      .sample-chart--wide {
+        min-height: 280px;
+        height: 320px;
+      }
+
+      .sample-chart canvas {
+        width: 100% !important;
+        height: 100% !important;
+      }
+
+      .sample-subcard {
+        border: 1px solid var(--color-border);
+        position: relative;
+        border-radius: 20px;
+        padding: 1rem;
+        background: var(--color-surface);
+        box-shadow: 0 18px 30px -28px rgba(18, 22, 54, 0.4);
+      }
+
+      .sample-subcard--flex {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+      .sample-table-subcard {
+        overflow: hidden;
+      }
+      .sample-subcard--flex .sample-table-wrapper {
+        flex: 1;
+        /* max-height: none; */
+        overflow: auto;
+      }
+
+      .sample-subcard::after {
+        content: "";
+        position: absolute;
+        inset: -12px;
+        border-radius: 28px;
+        border: 1px solid rgba(92, 72, 255, 0.12);
+        pointer-events: none;
+        z-index: -1;
+      }
+
+      .sample-latest-visual {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .sample-latest-lower {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .sample-pie-card {
+        border: 1px solid var(--color-border);
+        border-radius: 18px;
+        padding: 1rem;
+        background: var(--color-surface);
+        box-shadow: 0 12px 25px -18px rgba(16, 24, 64, 0.4);
+      }
+
+      .sample-pie-chart {
+        height: 220px;
+        margin-top: 0.5rem;
+      }
+
+      .sample-pie-legend {
+        list-style: none;
+        padding: 0;
+        margin: 0.75rem 0 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        font-size: 0.8rem;
+      }
+
+      .sample-pie-legend li {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--color-text-muted);
+      }
+
+      .sample-pie-legend span {
+        width: 0.75rem;
+        height: 0.75rem;
+        border-radius: 999px;
+        display: inline-flex;
+      }
+
+      .sample-pie-legend strong {
+        margin-left: auto;
+        font-weight: 600;
+        color: var(--color-text-strong);
+        font-size: 0.8rem;
+      }
+
+      @media (min-width: 992px) {
+        .sample-latest-lower {
+          flex-direction: row;
+          align-items: stretch;
+        }
+
+        .sample-subcard--fixed {
+          width: 320px;
+          flex-shrink: 0;
+        }
+      }
+
+      .sample-table-wrapper {
+        flex: 1;
+        border: 1px solid var(--color-border);
+        border-radius: 18px;
+        overflow: hidden;
+        background: var(--color-surface);
+        max-height: 420px;
+        overflow-y: auto;
+      }
+
+      .sample-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+        width: -webkit-fill-available;
+      }
+
+      .sample-table thead {
+        background: var(--color-bg);
+        position: sticky;
+        top: 0;
+      }
+
+      .sample-table th,
+      .sample-table td {
+        padding: 0.6rem 0.85rem;
+        text-align: right;
+        border-bottom: 1px solid var(--color-border);
+      }
+
+      .sample-table th:first-child,
+      .sample-table td:first-child {
+        text-align: left;
+      }
+
+      .sample-filter-row {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        margin-bottom: 0.75rem;
+      }
+
+      .sample-field {
+        display: flex;
+        flex-direction: column;
+        font-size: 0.85rem;
+        color: var(--color-text-muted);
+        gap: 0.35rem;
+      }
+
+      .sample-field input,
+      .sample-field select {
+        border-radius: 14px;
+        border: 1px solid var(--color-border);
+        padding: 0.6rem 0.85rem;
+        font-size: 0.95rem;
+        background: #fff;
+        color: inherit;
+      }
+
+      .sample-card-grid {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        max-height: 28rem;
+        overflow: auto;
+        padding-right: 0.5rem;
+      }
+
+      .sample-fund-card {
+        border: 1px solid var(--color-border);
+        border-radius: 20px;
+        padding: 1rem;
+        background: linear-gradient(135deg, rgba(92, 72, 255, 0.08), rgba(15, 201, 196, 0.08));
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .sample-fund-id {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        color: var(--color-text-soft);
+        margin: 0;
+      }
+
+      .sample-fund-name {
+        margin: 0;
+        font-size: 1rem;
+      }
+
+      .sample-pill-row {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+      }
+
+      .sample-pill {
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        padding: 0.2rem 0.65rem;
+        font-size: 0.7rem;
+        backdrop-filter: blur(6px);
+        background: rgba(255, 255, 255, 0.7);
+      }
+
+      .sample-fund-meta {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        font-size: 0.85rem;
+      }
+
+      .sample-fund-meta strong {
+        font-weight: 600;
+        margin-right: 0.25rem;
+      }
+
+      .sample-link {
+        font-size: 0.8rem;
+        color: var(--color-primary-strong);
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      .sample-link:hover {
+        text-decoration: underline;
+      }
+
+      .sample-upload-card {
+        border-style: dashed;
+      }
+
+      .sample-upload-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+      }
+
+      .sample-upload-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        font-size: 0.85rem;
+      }
+
+      .sample-upload-label {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        color: var(--color-text-muted);
+      }
+
+      .sample-upload-label strong {
+        font-size: 0.9rem;
+        color: var(--color-text-strong);
+      }
+
+      .sample-upload-label small {
+        font-size: 0.75rem;
+        color: var(--color-text-soft);
+      }
+
+      .sample-upload-field input {
+        border-radius: 14px;
+        border: 1px solid var(--color-border);
+        padding: 0.45rem;
+        background: var(--color-surface);
+        font-size: 0.85rem;
+      }
+
+      @media (min-width: 992px) {
+        .sample-artifact--split {
+          flex-direction: row;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.5.3/papaparse.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script type="text/babel" data-presets="env,react">
+      const { useState, useMemo, useEffect, useRef } = React
+
+      const CSV_DATA = {
+        fundHistory: `date,nav_total,units_outstanding,nav_per_unit,sale_price,repurchase_price,collected_at
+2024-12-17,12171403524,121263398.3,100.3716,100.3716,100.3716,2025-11-12T05:14:14.543Z
+2024-12-18,14662894638,146048277.6,100.3976,100.3976,100.3976,2025-11-12T05:14:14.541Z
+2024-12-19,12066725760,120151240.8,100.4295,100.4295,100.4295,2025-11-12T05:14:14.538Z
+2024-12-20,12071669908,120161198.1,100.4623,100.4623,100.4623,2025-11-12T05:14:14.536Z
+2024-12-23,12843844532,127731202.3,100.5537,100.5537,100.5537,2025-11-12T05:14:14.534Z
+2024-12-24,12873163144,127983803.6,100.5843,100.5843,100.5843,2025-11-12T05:14:14.532Z
+2024-12-27,13028958819,129415113.3,100.6757,100.6757,100.6757,2025-11-12T05:14:14.529Z
+2024-12-30,13065688807,129663435.4,100.7662,100.7662,100.7662,2025-11-12T05:14:14.527Z
+2024-12-31,13079699510,129764659.8,100.7955,100.7955,100.7955,2025-11-12T05:14:14.525Z
+2025-01-02,13101512636,129903513.4,100.8557,100.8557,100.8557,2025-11-12T05:14:14.523Z
+2025-01-03,13108518357,129934250.3,100.8858,100.8858,100.8858,2025-11-12T05:14:14.520Z
+2025-01-06,13120332425,129935241.6,100.9759,100.9759,100.9759,2025-11-12T05:14:14.518Z
+2025-01-07,13138925233,130078842.9,101.0074,101.0074,101.0074,2025-11-12T05:14:14.515Z
+2025-01-08,13144654442,130095079.4,101.0388,101.0388,101.0388,2025-11-12T05:14:14.513Z
+2025-01-09,13168894290,130294507.7,101.0702,101.0702,101.0702,2025-11-12T05:14:14.511Z
+2025-01-10,13223089517,130790202.6,101.1015,101.1015,101.1015,2025-11-12T05:14:14.509Z
+2025-01-13,13395373077,132372770.2,101.1943,101.1943,101.1943,2025-11-12T05:14:14.507Z
+2025-01-14,13649404441,134842264.5,101.225,101.225,101.225,2025-11-12T05:14:14.506Z
+2025-01-15,13676151927,135065529.5,101.2557,101.2557,101.2557,2025-11-12T05:14:14.504Z
+2025-01-16,13832007315,136563717.1,101.2861,101.2861,101.2861,2025-11-12T05:14:14.502Z
+2025-01-17,13885910849,137057368.2,101.3146,101.3146,101.3146,2025-11-12T05:14:14.500Z
+2025-01-20,13901086728,137090927.1,101.4005,101.4005,101.4005,2025-11-12T05:14:14.498Z
+2025-01-21,13805920754,136113802.6,101.4292,101.4292,101.4292,2025-11-12T05:14:14.496Z
+2025-01-22,13829838258,136310984.3,101.458,101.458,101.458,2025-11-12T05:14:14.494Z
+2025-01-23,14226782669,140184508.8,101.4861,101.4861,101.4861,2025-11-12T05:14:14.492Z
+2025-01-24,14233750049,140214168,101.5143,101.5143,101.5143,2025-11-12T05:14:14.490Z
+2025-01-27,14244320481,140201362,101.599,101.599,101.599,2025-11-12T05:14:14.488Z
+2025-01-28,14488900934,142569495.1,101.6269,101.6269,101.6269,2025-11-12T05:14:14.486Z
+2025-01-29,14496341668,142604446.5,101.6542,101.6542,101.6542,2025-11-12T05:14:14.484Z
+2025-01-30,14414442355,141758441.2,101.6831,101.6831,101.6831,2025-11-12T05:14:14.482Z
+2025-01-31,14419714529,141760408.1,101.7189,101.7189,101.7189,2025-11-12T05:14:14.480Z
+2025-02-03,14541936962,142840962.5,101.8051,101.8051,101.8051,2025-11-12T05:14:14.478Z
+2025-02-04,14571595354,143091932.3,101.8338,101.8338,101.8338,2025-11-12T05:14:14.476Z
+2025-02-05,15183305756,149057912.8,101.8618,101.8618,101.8618,2025-11-12T05:14:14.474Z
+2025-02-06,15226413086,149440785,101.8893,101.8893,101.8893,2025-11-12T05:14:14.471Z
+2025-02-07,15367118931,150779303.4,101.918,101.918,101.918,2025-11-12T05:14:14.470Z
+2025-02-10,15380125462,150779303.4,102.0042,102.0042,102.0042,2025-11-12T05:14:14.468Z
+2025-02-11,15433259607,151252512.7,102.0364,102.0364,102.0364,2025-11-12T05:14:14.466Z
+2025-02-12,15433300257,151205183.7,102.0686,102.0686,102.0686,2025-11-12T05:14:14.463Z
+2025-02-13,15438368749,151207143.1,102.1008,102.1008,102.1008,2025-11-12T05:14:14.461Z
+2025-02-14,15545197473,152206156,102.1325,102.1325,102.1325,2025-11-12T05:14:14.460Z
+2025-02-17,15539437020,152004457.2,102.2301,102.2301,102.2301,2025-11-12T05:14:14.458Z
+2025-02-18,15518740611,151753713.6,102.2627,102.2627,102.2627,2025-11-12T05:14:14.456Z
+2025-02-19,15554876035,152058810.3,102.2951,102.2951,102.2951,2025-11-12T05:14:14.455Z
+2025-02-20,15592081529,152374169.6,102.3276,102.3276,102.3276,2025-11-12T05:14:14.452Z
+2025-02-21,15699804888,153378454,102.3599,102.3599,102.3599,2025-11-12T05:14:14.451Z
+2025-02-24,15891783689,155108770.1,102.4557,102.4557,102.4557,2025-11-12T05:14:14.449Z
+2025-02-25,16019785910,156309386.1,102.4877,102.4877,102.4877,2025-11-12T05:14:14.447Z
+2025-02-26,16099475308,157038254.2,102.5194,102.5194,102.5194,2025-11-12T05:14:14.445Z
+2025-02-27,16141409483,157398488.8,102.5512,102.5512,102.5512,2025-11-12T05:14:14.443Z
+2025-02-28,16248181306,158392137.3,102.582,102.582,102.582,2025-11-12T05:14:14.441Z
+2025-03-03,16302438972,158771034.2,102.6789,102.678924,102.678924,2025-11-12T05:14:14.439Z
+2025-03-04,16808106376,163645452.3,102.7105,102.7105,102.7105,2025-11-12T05:14:14.436Z
+2025-03-05,16929458793,164775813.8,102.7424,102.7424,102.7424,2025-11-12T05:14:14.434Z
+2025-03-06,16963238045,165054277.3,102.7737,102.7737,102.7737,2025-11-12T05:14:14.432Z
+2025-03-07,16973723585,165103943.8,102.8063,102.8063,102.8063,2025-11-12T05:14:14.430Z
+2025-03-10,16971364836,164923993.8,102.9042,102.9042,102.9042,2025-11-12T05:14:14.428Z
+2025-03-11,16974353928,164900787.7,102.9368,102.9368,102.9368,2025-11-12T05:14:14.426Z
+2025-03-12,17005828718,165154341.4,102.9693,102.9693,102.9693,2025-11-12T05:14:14.424Z
+2025-03-13,17066220440,165688481.1,103.0019,103.0019,103.0019,2025-11-12T05:14:14.422Z
+2025-03-14,17067018035,165644280.2,103.0342,103.0342,103.0342,2025-11-12T05:14:14.419Z
+2025-03-17,18746736724,181789412.2,103.1234,103.1234,103.1234,2025-11-12T05:14:14.417Z
+2025-03-18,18539187927,179723025.8,103.1542,103.1542,103.1542,2025-11-12T05:14:14.415Z
+2025-03-19,18234637287,176716685.1,103.1857,103.1857,103.1857,2025-11-12T05:14:14.413Z
+2025-03-20,18247042611,176784524,103.2163,103.2163,103.2163,2025-11-12T05:14:14.410Z
+2025-03-21,18276452818,177013170.1,103.2491,103.2491,103.2491,2025-11-12T05:14:14.409Z
+2025-03-24,18521524965,179217063.1,103.3469,103.3469,103.3469,2025-11-12T05:14:14.407Z
+2025-03-25,18542982844,179368107.8,103.3795,103.3795,103.3795,2025-11-12T05:14:14.405Z
+2025-03-26,18485520384,178755897.4,103.4121,103.4121,103.4121,2025-11-12T05:14:14.404Z
+2025-03-27,19187320423,185484779.8,103.4442,103.4442,103.4442,2025-11-12T05:14:14.402Z
+2025-03-28,19142105840,184991759.7,103.4755,103.4755,103.4755,2025-11-12T05:14:14.401Z
+2025-04-02,19187553923,185146482.4,103.6345,103.6345,103.6345,2025-11-12T05:14:14.399Z
+2025-04-03,18940467783,182704961.2,103.667,103.667,103.667,2025-11-12T05:14:14.398Z
+2025-04-04,18914504734,182398209.6,103.699,103.699,103.699,2025-11-12T05:14:14.396Z
+2025-04-08,19024701399,183228497.6,103.8305,103.8305,103.8305,2025-11-12T05:14:14.395Z
+2025-04-09,19054011072,183452768.7,103.8633,103.8633,103.8633,2025-11-12T05:14:14.393Z
+2025-04-10,19383507756,186567054.3,103.8957,103.8957,103.8957,2025-11-12T05:14:14.392Z
+2025-04-11,19229069987,185022216.9,103.9284,103.9284,103.9284,2025-11-12T05:14:14.390Z
+2025-04-14,20152452697,193724657.8,104.0263,104.0263,104.0263,2025-11-12T05:14:14.389Z
+2025-04-15,20157336144,193712693.5,104.0579,104.0579,104.0579,2025-11-12T05:14:14.388Z
+2025-04-16,20374339606,195736566.7,104.0906,104.0906,104.0906,2025-11-12T05:14:14.386Z
+2025-04-17,20395287756,195876473.9,104.1232,104.1232,104.1232,2025-11-12T05:14:14.384Z
+2025-04-22,20552657705,197079478.1,104.2861,104.2861,104.2861,2025-11-12T05:14:14.383Z
+2025-04-23,20963142782,200953769.1,104.3182,104.3182,104.3182,2025-11-12T05:14:14.381Z
+2025-04-24,21009611255,201337211.2,104.3504,104.3504,104.3504,2025-11-12T05:14:14.380Z
+2025-04-25,21023223219,201405730.3,104.3824,104.3824,104.3824,2025-11-12T05:14:14.379Z
+2025-04-28,21320545042,204068269.5,104.4775,104.4775,104.4775,2025-11-12T05:14:14.377Z
+2025-04-29,21740919862,208029283.7,104.5089,104.5089,104.5089,2025-11-12T05:14:14.376Z
+2025-04-30,21803302995,208564357.6,104.5399,104.5399,104.5399,2025-11-12T05:14:14.374Z
+2025-05-02,21863588999,209016885.5,104.602,104.602,104.602,2025-11-12T05:14:14.373Z
+2025-05-05,21894215946,209111039.2,104.7014,104.7014,104.7014,2025-11-12T05:14:14.371Z
+2025-05-06,22645925390,216223897.9,104.7337,104.7337,104.7337,2025-11-12T05:14:14.369Z
+2025-05-07,21852755623,208584999.7,104.7667,104.7667,104.7667,2025-11-12T05:14:14.367Z
+2025-05-08,22257883143,212386003.5,104.7992,104.7992,104.7992,2025-11-12T05:14:14.366Z
+2025-05-09,22497686620,214607957.5,104.8316,104.8316,104.8316,2025-11-12T05:14:14.364Z
+2025-05-12,22595137930,215338653.5,104.9284,104.9284,104.9284,2025-11-12T05:14:14.362Z
+2025-05-13,22873969227,217929468.1,104.9604,104.9604,104.9604,2025-11-12T05:14:14.361Z
+2025-05-14,23941253312,228030343.8,104.9915,104.9915,104.9915,2025-11-12T05:14:14.359Z
+2025-05-15,23975493508,228288459.9,105.0228,105.0228,105.0228,2025-11-12T05:14:14.357Z
+2025-05-16,24353313073,231817693.5,105.0537,105.0537,105.0537,2025-11-12T05:14:14.356Z
+2025-05-19,23475066412,223255408.2,105.1489,105.1489,105.1489,2025-11-12T05:14:14.354Z
+2025-05-20,24299840337,231031135.5,105.1799,105.1799,105.1799,2025-11-12T05:14:14.352Z
+2025-05-21,24339717569,231341737.6,105.2111,105.2111,105.2111,2025-11-12T05:14:14.350Z
+2025-05-22,24600078430,233751274.3,105.2404,105.2404,105.2404,2025-11-12T05:14:14.349Z
+2025-05-23,24413796145,231908065.9,105.2736,105.2736,105.2736,2025-11-12T05:14:14.347Z
+2025-05-26,24450300025,232035448.3,105.3731,105.3731,105.3731,2025-11-12T05:14:14.345Z
+2025-05-27,24403964119,231522720.6,105.4063,105.4063,105.4063,2025-11-12T05:14:14.340Z
+2025-05-28,24362366575,231056002.9,105.4392,105.4392,105.4392,2025-11-12T05:14:14.339Z
+2025-05-29,24369762760,231052209.3,105.473,105.473,105.473,2025-11-12T05:14:14.338Z
+2025-05-30,24377371897,231050502.7,105.5067,105.5067,105.5067,2025-11-12T05:14:14.336Z
+2025-06-02,24439879688,231420530.3,105.6081,105.6081,105.6081,2025-11-12T05:14:14.335Z
+2025-06-03,25502199618,241404489.2,105.641,105.641,105.641,2025-11-12T05:14:14.333Z
+2025-06-04,25625606735,242496490,105.6741,105.6741,105.6741,2025-11-12T05:14:14.331Z
+2025-06-05,25620227206,242369685.1,105.7072,105.7072,105.7072,2025-11-12T05:14:14.330Z
+2025-06-06,25656138073,242634567.6,105.7398,105.7398,105.7398,2025-11-12T05:14:14.328Z
+2025-06-09,26077668993,246384960.4,105.8412,105.8412,105.8412,2025-11-12T05:14:14.327Z
+2025-06-10,26531963550,250600428.4,105.8736,105.8736,105.8736,2025-11-12T05:14:14.325Z
+2025-06-11,26254045402,247895176.5,105.9079,105.9079,105.9079,2025-11-12T05:14:14.324Z
+2025-06-12,26241183008,247693586.2,105.9421,105.9421,105.9421,2025-11-12T05:14:14.322Z
+2025-06-13,26250062600,247697361.8,105.9764,105.9764,105.9764,2025-11-12T05:14:14.321Z
+2025-06-16,26262144550,247570918.5,106.0793,106.0793,106.0793,2025-11-12T05:14:14.320Z
+2025-06-17,26261968727,247489022.1,106.1137,106.1137,106.1137,2025-11-12T05:14:14.318Z
+2025-06-18,26279439722,247573836.8,106.1479,106.1479,106.1479,2025-11-12T05:14:14.316Z
+2025-06-19,26165700806,246422299.3,106.1824,106.1824,106.1824,2025-11-12T05:14:14.315Z
+2025-06-20,26259328022,247223949.2,106.2168,106.2168,106.2168,2025-11-12T05:14:14.313Z
+2025-06-23,26672003709,250867441.8,106.3191,106.3191,106.3191,2025-11-12T05:14:14.312Z
+2025-06-24,26683182508,250893102.5,106.3528,106.3528,106.3528,2025-11-12T05:14:14.310Z
+2025-06-25,27495047641,258444364.6,106.3867,106.3867,106.3867,2025-11-12T05:14:14.308Z
+2025-06-26,27567453523,259043525,106.4202,106.4202,106.4202,2025-11-12T05:14:14.307Z
+2025-06-27,27692466451,260134897.6,106.4543,106.4543,106.4543,2025-11-12T05:14:14.305Z
+2025-06-30,27723176041,260172472.4,106.5569,106.5569,106.5569,2025-11-12T05:14:14.304Z
+2025-07-01,28813397445,270319162.5,106.5903,106.5903,106.5903,2025-11-12T05:14:14.302Z
+2025-07-02,28621903709,268438265.5,106.6238,106.6238,106.6238,2025-11-12T05:14:14.301Z
+2025-07-03,28640968081,268532756.6,106.6573,106.6573,106.6573,2025-11-12T05:14:14.299Z
+2025-07-04,28657410302,268602606.6,106.6907,106.6907,106.6907,2025-11-12T05:14:14.298Z
+2025-07-08,29440999774,275606963.4,106.8224,106.8224,106.8224,2025-11-12T05:14:14.296Z
+2025-07-09,29455263890,275655438.9,106.8554,106.8554,106.8554,2025-11-12T05:14:14.295Z
+2025-07-10,29445307015,275477378.4,106.8883,106.8883,106.8883,2025-11-12T05:14:14.294Z
+2025-07-11,29373691071,274722384.6,106.9214,106.9214,106.9214,2025-11-12T05:14:14.292Z
+2025-07-14,29361066947,274349493.7,107.0207,107.0207,107.0207,2025-11-12T05:14:14.291Z
+2025-07-15,29377512219,274418312.8,107.0538,107.0538,107.0538,2025-11-12T05:14:14.289Z
+2025-07-16,29400631013,274549479.2,107.0868,107.0868,107.0868,2025-11-12T05:14:14.288Z
+2025-07-17,30199567600,281927511.3,107.1182,107.1182,107.1182,2025-11-12T05:14:14.286Z
+2025-07-18,30334296342,283096313.6,107.1519,107.1519,107.1519,2025-11-12T05:14:14.285Z
+2025-07-21,30282268411,282344091,107.2531,107.2531,107.2531,2025-11-12T05:14:14.284Z
+2025-07-22,30341156556,282804283.2,107.2868,107.2868,107.2868,2025-11-12T05:14:14.282Z
+2025-07-23,31196740153,290689262,107.3199,107.3199,107.3199,2025-11-12T05:14:14.280Z
+2025-07-24,31354151322,292065777,107.353,107.353,107.353,2025-11-12T05:14:14.279Z
+2025-07-25,31463809598,292996817.2,107.3862,107.3862,107.3862,2025-11-12T05:14:14.274Z
+2025-07-28,31505241756,293111289.5,107.4856,107.4856,107.4856,2025-11-12T05:14:14.273Z
+2025-07-29,31773817003,295519240,107.5186,107.5186,107.5186,2025-11-12T05:14:14.271Z
+2025-07-30,31750593257,295212276.7,107.5517,107.5517,107.5517,2025-11-12T05:14:14.270Z
+2025-07-31,31756439326,295179734.2,107.5834,107.5834,107.5834,2025-11-12T05:14:14.268Z
+2025-08-01,32163135032,298865537,107.6174,107.6174,107.6174,2025-11-12T05:14:14.267Z
+2025-08-04,32151612909,298474522.2,107.7198,107.7198,107.7198,2025-11-12T05:14:14.265Z
+2025-08-05,31891044449,295961367.5,107.7541,107.7541,107.7541,2025-11-12T05:14:14.264Z
+2025-08-06,31137848568,288878239.7,107.7888,107.7888,107.7888,2025-11-12T05:14:14.262Z
+2025-08-07,31172183857,289103662.2,107.8236,107.8236,107.8236,2025-11-12T05:14:14.261Z
+2025-08-11,31078576465,287863844,107.9628,107.9628,107.9628,2025-11-12T05:14:14.259Z
+2025-08-12,31673147927,293277336.4,107.9973,107.9973,107.9973,2025-11-12T05:14:14.258Z
+2025-08-13,31201108841,288813487.8,108.032,108.032,108.032,2025-11-12T05:14:14.256Z
+2025-08-14,31262846208,289291917.9,108.0668,108.0668,108.0668,2025-11-12T05:14:14.255Z
+2025-08-15,31486887843,291271895.7,108.1014,108.1014,108.1014,2025-11-12T05:14:14.253Z
+2025-08-18,31625993133,292278399.5,108.205,108.205,108.205,2025-11-12T05:14:14.252Z
+2025-08-19,31410609339,290194911.3,108.2397,108.2397,108.2397,2025-11-12T05:14:14.251Z
+2025-08-20,31428162986,290264065.2,108.2744,108.2744,108.2744,2025-11-12T05:14:14.249Z
+2025-08-21,31842171339,293994402.7,108.3088,108.3088,108.3088,2025-11-12T05:14:14.247Z
+2025-08-22,32252086968,297685136.2,108.343,108.343,108.343,2025-11-12T05:14:14.245Z
+2025-08-25,32325359214,298079439.7,108.4455,108.4455,108.4455,2025-11-12T05:14:14.244Z
+2025-08-26,32492792825,299529290.1,108.4795,108.4795,108.4795,2025-11-12T05:14:14.242Z
+2025-08-27,32493004018,299437300.6,108.5135,108.5135,108.5135,2025-11-12T05:14:14.241Z
+2025-08-28,32505142498,299455163.4,108.5476,108.5476,108.5476,2025-11-12T05:14:14.239Z
+2025-08-29,32724813750,301384731.4,108.5815,108.5815,108.5815,2025-11-12T05:14:14.238Z
+2025-09-01,32822401251,302001779.3,108.6828,108.6828,108.6828,2025-11-12T05:14:14.237Z
+2025-09-02,32923460967,302837854.5,108.7165,108.7165,108.7165,2025-11-12T05:14:14.235Z
+2025-09-03,32919690909,302708974.2,108.7503,108.7503,108.7503,2025-11-12T05:14:14.233Z
+2025-09-04,32827461549,301766723.9,108.7842,108.7842,108.7842,2025-11-12T05:14:14.231Z
+2025-09-08,32723525219,300434353.3,108.9207,108.9207,108.9207,2025-11-12T05:14:14.229Z
+2025-09-09,32854446174,301542498.8,108.9546,108.9546,108.9546,2025-11-12T05:14:14.228Z
+2025-09-10,32862629925,301523224.7,108.9887,108.9887,108.9887,2025-11-12T05:14:14.226Z
+2025-09-11,32898113796,301754441.3,109.0228,109.0228,109.0228,2025-11-12T05:14:14.225Z
+2025-09-12,32961709070,302243485.8,109.0568,109.0568,109.0568,2025-11-12T05:14:14.224Z
+2025-09-15,33437767797,306325028.4,109.1578,109.1578,109.1578,2025-11-12T05:14:14.222Z
+2025-09-16,33446131603,306306294.8,109.1918,109.1918,109.1918,2025-11-12T05:14:14.221Z
+2025-09-17,33690183504,308446751.4,109.2253,109.2253,109.2253,2025-11-12T05:14:14.220Z
+2025-09-18,33594506329,307474831.4,109.2594,109.2594,109.2594,2025-11-12T05:14:14.218Z
+2025-09-19,33591920979,307355848.4,109.2933,109.2933,109.2933,2025-11-12T05:14:14.217Z
+2025-09-22,33630308180,307420811.3,109.395,109.395,109.395,2025-11-12T05:14:14.216Z
+2025-09-23,33573009033,306801455.6,109.4291,109.4291,109.4291,2025-11-12T05:14:14.214Z
+2025-09-24,33583128481,306798896.8,109.463,109.463,109.463,2025-11-12T05:14:14.213Z
+2025-09-25,33665745900,307458751.9,109.4968,109.4968,109.4968,2025-11-12T05:14:14.211Z
+2025-09-26,33669881960,307401069.9,109.5308,109.5308,109.5308,2025-11-12T05:14:14.209Z
+2025-09-29,33697200511,307364276.6,109.6328,109.6328,109.6328,2025-11-12T05:14:14.207Z
+2025-09-30,33709820562,307383637.1,109.6669,109.6669,109.6669,2025-11-12T05:14:14.206Z
+2025-10-01,33737155123,307537831.3,109.7008,109.7008,109.7008,2025-11-12T05:14:14.204Z
+2025-10-02,33894491852,308877155.7,109.7345,109.7345,109.7345,2025-11-12T05:14:14.202Z
+2025-10-03,33942982070,309223700.4,109.7684,109.7684,109.7684,2025-11-12T05:14:14.201Z
+2025-10-06,34009451438,309542735.8,109.87,109.87,109.87,2025-11-12T05:14:14.200Z
+2025-10-07,33820247292,307724638.7,109.9043,109.9043,109.9043,2025-11-12T05:14:14.198Z
+2025-10-08,33712522160,306649248.1,109.9384,109.9384,109.9384,2025-11-12T05:14:14.197Z
+2025-10-09,33742216827,306824803.5,109.9723,109.9723,109.9723,2025-11-12T05:14:14.195Z
+2025-10-10,34405134557,312759937,110.0049,110.0049,110.0049,2025-11-12T05:14:14.194Z
+2025-10-13,34347842716,311951336.9,110.1064,110.1064,110.1064,2025-11-12T05:14:14.193Z
+2025-10-15,34354677690,311822047.2,110.174,110.174,110.174,2025-11-12T05:14:14.192Z
+2025-10-16,34371188762,311876324.9,110.2078,110.2078,110.2078,2025-11-12T05:14:14.190Z
+2025-10-17,34052638845,308889330,110.2422,110.2422,110.2422,2025-11-12T05:14:14.189Z
+2025-10-20,34084621121,308894672.8,110.3438,110.3438,110.3438,2025-11-12T05:14:14.187Z
+2025-10-21,34053269234,308515152.8,110.3779,110.3779,110.3779,2025-11-12T05:14:14.186Z
+2025-10-22,34052997293,308417678.6,110.4119,110.4119,110.4119,2025-11-12T05:14:14.185Z
+2025-10-23,33984944152,307705935,110.4462,110.4462,110.4462,2025-11-12T05:14:14.184Z
+2025-10-24,33850854283,306396518.9,110.4805,110.4805,110.4805,2025-11-12T05:14:14.182Z
+2025-10-27,33748157204,305187029.9,110.5819,110.5819,110.5819,2025-11-12T05:14:14.180Z
+2025-10-28,33798318982,305550543.4,110.6145,110.6145,110.6145,2025-11-12T05:14:14.178Z
+2025-11-04,33868196869,305550543.4,110.8432,110.8432,110.8432,2025-11-12T05:14:14.177Z
+2025-11-05,34001770748,306665632.4,110.8757,110.8757,110.8757,2025-11-12T05:14:14.175Z
+2025-11-06,33768823572,304473515.3,110.9089,110.9089,110.9089,2025-11-12T05:14:14.173Z
+2025-11-07,33790758231,304581306.5,110.9417,110.9417,110.9417,2025-11-12T05:14:14.171Z
+2025-11-10,34144218874,307497363.8,111.0391,111.0391,111.0391,2025-11-12T05:14:14.168Z
+2025-11-11,34717202324,312568660.3,111.0706,111.0706,111.0706,2025-11-12T12:58:16.505Z
+2025-11-12,34758019385,312844858.7,111.1031,111.1031,111.1031,2025-11-13T09:57:25.546Z`,
+        latestFunds: `fund_id,date,nav_total,units_outstanding,nav_per_unit,sale_price,repurchase_price,collected_at
+itrust.icash,12/11/2025,34758019385,312844858.7,111.1031,111.1031,111.1031,2025-11-13T09:57:25.546Z
+itrust.iDollar,12/11/2025,12486351.09,123113.0412,101.4218,101.4218,101.4218,2025-11-13T09:57:33.377Z
+itrust.iGrowth,12/11/2025,90072261627,658464855.7,136.7913,136.7913,135.4234,2025-11-13T09:57:42.139Z
+itrust.iIncome,12/11/2025,15343419778,136575960.1,112.3435,112.3435,111.2201,2025-11-13T09:57:57.150Z
+itrust.Imaan,12/11/2025,15698321065,116025895.9,135.3001,135.3001,133.9471,2025-11-13T09:58:11.002Z
+itrust.iSave,12/11/2025,9998548062,89305156.25,111.9594,111.9594,110.8398,2025-11-13T09:58:29.087Z
+orbit.inuka,13/11/2025,30213761760,257619901,117.2707,117.2707,117.2707,2025-11-14T01:35:38.702Z
+utt.bond,11/11/2025,1057072179091,8680523579,121.7752,121.7752,121.7752,2025-11-13T09:59:47.885Z
+utt.jikimu,11/11/2025,43925000504,226881959,193.6029,193.6029,189.7308,2025-11-13T10:01:22.553Z
+utt.liquid,11/11/2025,2183018920744,4525723593,482.358,482.358,482.358,2025-11-13T17:59:50.253Z
+utt.umoja,11/11/2025,398509546577,333101432.4,1196.361,1196.361,1184.3973,2025-11-13T18:00:46.623Z
+utt.watoto,11/11/2025,37810331629,46873378.52,806.6483,806.6483,798.5818,2025-11-13T18:01:46.615Z
+utt.wekeza,11/11/2025,27987541633,25712186.72,1088.4932,1088.4932,1066.7234,2025-11-13T18:02:51.445Z
+whi.faida,13/11/2025,48832869356,354988908.2,137.5617,137.5617,137.5617,2025-11-14T01:37:47.528Z
+zansec.timiza,13/11/2025,23599672406,199709506.7,118.17,118.17,118.17,2025-11-14T01:37:52.500Z`,
+        fundsOverview: `fund_id,Fund,Fund Link,Fund Performance Link,Structure,Manager,Manager Link,Trustee/Custodian,Asset Class Tilt,Benchmark,Liquidity Window,Management Fee,Front/Exit Load,ESG Policy,Notes,Offer Link
+utt.liquid,UTT Liquid Fund,https://uttamis.co.tz/products/liquid_fund,https://uttamis.co.tz/fund-performance,Open-end Money Market,UTT AMIS,https://uttamis.co.tz,CRDB Bank,"100% money market & debt instruments (T-bills, call deposits)",7-year Treasury bond weighted average yield,Repurchase processed within 3 working days,1.8% of NAV; custodian 0.1%; other charges 0.35% (total capped at 2.25%),No entry or exit load,,Largest collective investment scheme; very liquid,https://www.uttamis.co.tz/docs/reports/Liquid Fund - Offer Document.pdf
+utt.bond,UTT Bond (Hatifungani) Fund,https://uttamis.co.tz/products/bond_fund,https://uttamis.co.tz/fund-performance,Open-end Bond,UTT AMIS,https://uttamis.co.tz,CRDB Bank,"Money market & debt instruments including Treasury bonds, bills, bank placements & some corporate bonds",Weighted average yield of 7‑year Treasury bond,Repurchase processed within 3 working days,1.8% of NAV; custodian 0.1%; other charges 0.6% (charges capped at 2.4%),No entry or exit load,,Monthly interest distributions,https://uttamis.co.tz/docs/reports/Bond%20Fund%20Offer%20Document%20ENGLISH.pdf
+utt.umoja,UTT Umoja Fund,https://uttamis.co.tz/products/umoja_fund,https://uttamis.co.tz/fund-performance,Open-end Balanced,UTT AMIS,https://uttamis.co.tz,CRDB Bank,Balanced (~50% equity) investing in equities and fixed-income securities,50% Tanzania Share Index + 50% 7-year bond yield (approx),Liquidity period not specified; repurchase processed on forward pricing,1.8% of NAV; custodian 0.1%; other charges 0.6% (charges capped at 2.4%),No entry or exit load,,First collective investment scheme; diversified growth,https://www.uttamis.co.tz/docs/reports/Umoja Fund - Offer Document.pdf
+utt.wekeza,Wekeza Maisha Fund,https://uttamis.co.tz/products/wekeza_maisha,https://uttamis.co.tz/fund-performance,Open-end Balanced/Insurance,UTT AMIS,https://uttamis.co.tz,CRDB Bank,Mixed equities and bonds with life insurance rider,50% Tanzania Share Index + 50% 7‑year bond yield (approx),5‑year lock-in; partial redemptions allowed after lock‑in,1.5% of NAV; custodian 0.1%; other charges 0.9% (charges capped at 2.5%),Service charge on partial redemptions (approximately 2%),,Includes life insurance rider,https://uttamis.co.tz/docs/reports/Wekeza Maisha Offer Documet ENGLISH.pdf
+utt.watoto,Watoto Fund,https://uttamis.co.tz/products/watoto_fund,https://uttamis.co.tz/fund-performance,Open-end Balanced (child plan),UTT AMIS,https://uttamis.co.tz,CRDB Bank,Mixed equities and bonds,50% Tanzania Share Index + 50% 7‑year bond yield (approx),Withdrawals allowed after age 12,1.5% of NAV; custodian 0.1%; other charges 0.8% (charges capped at 2.4%),1% exit fee if redeemed within 3 years,,Designed for children’s long-term savings,https://www.uttamis.co.tz/docs/reports/Watoto Fund Offer Document ENGLISH.pdf
+utt.jikimu,Jikimu Fund,https://uttamis.co.tz/products/jikimu_fund,https://uttamis.co.tz/fund-performance,Open-end Income-Balanced,UTT AMIS,https://uttamis.co.tz,CRDB Bank,Approximately 65% debt instruments and 35% equity,1‑year Treasury‑bill yield,Repurchase processed on forward pricing (T+10 days not explicitly confirmed),1.8% of NAV; custodian 0.1%; other charges 0.6% (charges capped at 2.4%),2% if redeemed <1 yr; 1.5% if redeemed <2 yrs; 1% if redeemed <3 yrs,,Quarterly/annual income distributions,https://www.uttamis.co.tz/docs/reports/Jikimu Fund - Offer Document.pdf
+whi.faida,Faida Fund,https://www.whi.go.tz/faida-fund/,https://www.whi.go.tz/NavData/NavEnglish.php,Open-end Money‑Market,Watumishi Housing Investments,https://www.whi.go.tz,CRDB Bank,"Invests 100% in money‑market and debt instruments (T‑bills, deposits and bonds)",2‑year Government of Tanzania bond rate,Lock‑in period up to 3 months; repurchase proceeds credited within 1‑3 working days,1.8% of NAV; custodian 0.1%; other charges 0.60% (charges capped at 2.5%),No entry or exit load,,Low-ticket cash alternative,https://www.whi.go.tz/wp-content/uploads/2022/10/24-FAIDA-FUND-PROSPECTUS-ENGLISH-VERSION-21-FNL.pdf
+zansec.timiza,Timiza Fund,https://zansec.co.tz/Timiza-Fund.php,https://zansec.co.tz/nav.php,Open-end Balanced,Zan Securities,https://zansec.co.tz,Mwanga Hakika Bank,Invests in a mix of bonds and equities (~50% equity),10‑year Treasury bond yield + 0.5%,Repurchase processed within 2 working days,~1.3% management fee (official document not located; assumed),No entry or exit load,,First private-sector collective investment scheme,https://zansec.co.tz/uploads/formuploads/TIMIZA Teaser.pdf
+itrust.icash,iCash Fund,https://itrust.co.tz/services/i-invest,https://itrust.co.tz/services/i-invest,Open-end Money‑Market,iTrust Finance,https://itrust.co.tz,KCB Bank,"Treasury bills, call deposits and other short‑term instruments",364‑day Treasury Bill Weighted Average Yield,Repurchase processed within 3 working days,Management fee not explicitly stated (likely around 1%),No entry or exit load,,Low‑risk cash alternative,https://itrust.co.tz/prospectus/pdf/iCash Fund Offer ENG.pdf
+itrust.iSave,iSave Fund,https://itrust.co.tz/services/i-invest,https://itrust.co.tz/services/i-invest,Open-end Defensive Balanced,iTrust Finance,https://itrust.co.tz,KCB Bank,Defensive mix of primarily fixed‑income securities,50% T-bill rate + Consumer Price Index + α,Repurchase processed within 3 working days,1.6% of NAV (management fee); custodian 0.1%; exit fee 1%,1% exit fee (no entry fee),,Medium‑term savings fund,https://itrust.co.tz/prospectus/pdf/iSave Fund Offer ENG.pdf
+itrust.iIncome,iIncome Fund (USD),https://itrust.co.tz/services/i-invest,https://itrust.co.tz/services/i-invest,Open-end USD Fixed‑Income,iTrust Finance,https://itrust.co.tz,KCB Bank,USD denominated sovereign and corporate bonds,364‑day Treasury bill (USD) or comparable rate,Repurchase processed within 3 working days,Management fee unknown (likely around 1.5%); custodian 0.1%,No entry or exit load,,USD denominated fixed income fund,https://itrust.co.tz/prospectus/pdf/iIncome Fund Offer ENG.pdf
+itrust.Imaan,Imaan Fund,https://itrust.co.tz/services/i-invest,https://itrust.co.tz/services/i-invest,Open-end Shariah Fixed‑Income,iTrust Finance,https://itrust.co.tz,KCB Bank,Sukuk and Sharia‑compliant deposits,Sharia index,Repurchase processed within 3 working days,Management fee around 2% (estimated); custodian 0.1%,No entry or exit load,Sharia‑compliant,Provides halal fixed-income exposure,https://itrust.co.tz/prospectus/pdf/Imaan Fund Offer ENG.pdf
+itrust.iGrowth,iGrowth Fund,https://itrust.co.tz/services/i-invest,https://itrust.co.tz/services/i-invest,Open-end Balanced Growth,iTrust Finance,https://itrust.co.tz,KCB Bank,Invests around 60% of assets in equities and the balance in bonds,Weighted average yield of Treasury bonds and DSE Tanzania Share Index,Repurchase processed within 3 working days,1.6% of NAV (management fee); custodian 0.1%; exit fee 1%,1% exit fee (no entry fee),,Growth‑oriented balanced fund,https://itrust.co.tz/prospectus/pdf/iGrowth Fund Offer ENG.pdf
+itrust.iDollar,iDollar Fund,https://itrust.co.tz/services/i-invest,https://itrust.co.tz/services/i-invest,Open-end USD Money‑Market,iTrust Finance,https://itrust.co.tz,KCB Bank,USD call deposits and short‑term USD Treasury bills,USD Treasury bill rate,Repurchase processed within 2 working days,Management fee not specified (likely around 1%),No entry or exit load,,Recently launched USD money‑market fund,https://itrust.co.tz/prospectus/pdf/iDollar Fund Offer ENG.pdf
+sanlam.,Sanlam Pesa Money Market Fund,https://invest-tz.sanlamallianzinvestments.com/sw,https://invest-tz.sanlamallianzinvestments.com/sw,Open-end Money‑Market,Sanlam Investments East Africa,https://invest-tz.sanlamallianzinvestments.com/sw,Not specified,"Fixed‑income securities such as Treasury bills & bonds, high‑quality corporate bonds and bank deposits",Not specified (aims to deliver yield above bank deposits),Withdrawals processed within 2–3 working days,Management fee 2% (rates published net of fee),"No entry or exit load; frequency charge of TZS 5,000 for additional withdrawals in a month",,Mobile‑friendly unit trust platform,https://edgepub.s3.af-south-1.amazonaws.com/unit-trust/fund-updates/ke/Product_Guide_KE.pdf
+sanlam.,Sanlam USD Fixed‑Income Fund,,,Open-end USD Fixed‑Income,Sanlam Investments East Africa,https://invest-tz.sanlamallianzinvestments.com/sw,Not specified,"USD‑denominated short‑term cash‑equivalent securities (Treasury bills & bonds, high‑quality corporate bonds, bank deposits)",Not specified (aims to deliver yield above bank deposits),Withdrawals processed within 3 working days,Management fee 1.5% (per product guide),No entry or exit load; frequency charge may apply,,USD fixed‑income fund with capital preservation objective,
+orbit.inuka,Orbit Money‑Market Fund (Inuka),https://orbit.co.tz/inuka-fund,https://orbit.co.tz/inuka-fund,Open-end Money‑Market,Orbit Securities,https://orbit.co.tz,Not specified,Money‑market instruments and highly liquid Treasury securities,Not specified,Repurchase requests processed within 1–3 days,Management fee 2% of NAV (custodian 0.15%; total charges capped at 3% of NAV),No entry or exit load,,Cross‑border money‑market fund,`,
+      }
+
+      const CSV_UPLOADS = [
+        { kind: 'fundHistory', label: '1 · fund_parsed_data.csv', description: 'Time-series for a single fund' },
+        { kind: 'latestFunds', label: '2 · latest_funds_data.csv', description: 'Latest snapshot for multiple funds' },
+        { kind: 'fundsOverview', label: '3 · funds_overview.csv', description: 'Catalogue of available funds' },
+      ]
+
+      const sanitizeRows = (rows = []) =>
+        rows.filter((row) => row && Object.values(row).some((value) => (typeof value === 'string' ? value.trim() : value)))
+
+      const parseNumericValue = (value) => {
+        if (typeof value === 'number') {
+          return Number.isFinite(value) ? value : null
+        }
+        if (typeof value === 'string') {
+          const normalized = value.replace(/,/g, '').trim()
+          if (!normalized) return null
+          const parsed = Number(normalized)
+          return Number.isFinite(parsed) ? parsed : null
+        }
+        return null
+      }
+
+      const Card = ({ title, subtitle, children, className = '' }) => (
+        <div className={['sample-card', className].filter(Boolean).join(' ')}>
+          {(title || subtitle) && (
+            <header className="sample-card__header">
+              {title && <h2 className="sample-card__title">{title}</h2>}
+              {subtitle && <p className="sample-card__subtitle">{subtitle}</p>}
+            </header>
+          )}
+          {children}
+        </div>
+      )
+
+      const TabButton = ({ id, activeId, onClick, children }) => {
+        const isActive = id === activeId
+        return (
+          <button type="button" className={['sample-tab', isActive ? 'is-active' : ''].join(' ')} onClick={() => onClick(id)}>
+            {children}
+          </button>
+        )
+      }
+
+      const cloneConfig = (value) => (value ? JSON.parse(JSON.stringify(value)) : value)
+
+      const ChartCanvas = ({ type, data, options }) => {
+        const canvasRef = useRef(null)
+        const chartRef = useRef(null)
+
+        useEffect(() => {
+          if (!canvasRef.current || typeof window.Chart === 'undefined' || !data || !options) return undefined
+          const ChartLib = window.Chart
+          const preparedData = cloneConfig(data)
+          const preparedOptions = cloneConfig(options)
+          chartRef.current?.destroy()
+          chartRef.current = new ChartLib(canvasRef.current, {
+            type,
+            data: preparedData,
+            options: preparedOptions,
+          })
+          return () => {
+            chartRef.current?.destroy()
+          }
+        }, [type, data, options])
+
+        return <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} />
+      }
+
+      const FundHistoryArtifact = ({ data }) => {
+        const [windowSize, setWindowSize] = useState('90')
+
+        const parsed = useMemo(() => {
+          if (!data.length) return []
+          const rows = data
+            .filter((row) => row.date || row.Date || row['Date'])
+            .map((row) => {
+              const rawDate = row.date ?? row.Date ?? row['Date']
+              const d = rawDate ? new Date(rawDate) : null
+              const label = d && !Number.isNaN(d.getTime()) ? d.toISOString().slice(0, 10) : String(rawDate ?? '')
+              const navPer = parseNumericValue(row.nav_per_unit ?? row['nav_per_unit'])
+              const navTotal = parseNumericValue(row.nav_total ?? row['nav_total'])
+              const sale = parseNumericValue(row.sale_price ?? row['sale_price'])
+              const repurchase = parseNumericValue(row.repurchase_price ?? row['repurchase_price'])
+              return {
+                ...row,
+                dateLabel: label,
+                nav_per_unit_num: navPer,
+                nav_total_num: navTotal,
+                sale_price_num: sale,
+                repurchase_price_num: repurchase,
+                _dateObj: d,
+              }
+            })
+            .filter((row) => row._dateObj && !Number.isNaN(row._dateObj.getTime()))
+
+          rows.sort((a, b) => {
+            if (!a._dateObj || !b._dateObj) return 0
+            return a._dateObj.getTime() - b._dateObj.getTime()
+          })
+          return rows
+        }, [data])
+
+        const sliced = useMemo(() => {
+          if (!parsed.length) return []
+          if (windowSize === 'all') return parsed
+          const days = Number(windowSize)
+          if (!Number.isFinite(days)) return parsed
+          const lastDate = parsed[parsed.length - 1]._dateObj
+          if (!lastDate) return parsed
+          const cutoff = new Date(lastDate)
+          cutoff.setDate(cutoff.getDate() - days)
+          return parsed.filter((row) => row._dateObj && row._dateObj >= cutoff)
+        }, [parsed, windowSize])
+
+        const latest = parsed[parsed.length - 1]
+        const prev = parsed[parsed.length - 2]
+        const latestNav = latest?.nav_per_unit_num ?? null
+        const prevNav = prev?.nav_per_unit_num ?? null
+        const delta = latestNav != null && prevNav != null ? latestNav - prevNav : null
+        const deltaPct = latestNav != null && prevNav != null && prevNav !== 0 ? ((latestNav - prevNav) / prevNav) * 100 : null
+
+        const historyChartData = useMemo(() => {
+          if (!sliced.length) {
+            return { labels: [], datasets: [] }
+          }
+          const labels = sliced.map((row) => row.dateLabel)
+          return {
+            labels,
+            datasets: [
+              {
+                label: 'NAV / unit',
+                data: sliced.map((row) => row.nav_per_unit_num ?? null),
+                borderColor: '#5c48ff',
+                backgroundColor: 'rgba(92, 72, 255, 0.08)',
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0.25,
+                spanGaps: true,
+                yAxisID: 'y',
+              },
+              {
+                label: 'NAV total',
+                data: sliced.map((row) => row.nav_total_num ?? null),
+                borderColor: '#7c3aed',
+                borderDash: [4, 2],
+                borderWidth: 1.5,
+                pointRadius: 0,
+                tension: 0.2,
+                spanGaps: true,
+                yAxisID: 'y1',
+              },
+              {
+                label: 'Sale',
+                data: sliced.map((row) => row.sale_price_num ?? null),
+                borderColor: '#0ea5e9',
+                borderDash: [2, 2],
+                borderWidth: 1,
+                pointRadius: 0,
+                tension: 0.2,
+                spanGaps: true,
+                yAxisID: 'y',
+              },
+              {
+                label: 'Repurchase',
+                data: sliced.map((row) => row.repurchase_price_num ?? null),
+                borderColor: '#f97316',
+                borderDash: [2, 2],
+                borderWidth: 1,
+                pointRadius: 0,
+                tension: 0.2,
+                spanGaps: true,
+                yAxisID: 'y',
+              },
+            ],
+          }
+        }, [sliced])
+
+        const historyChartOptions = useMemo(
+          () => ({
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+              legend: {
+                labels: { color: '#475569', usePointStyle: true, font: { size: 12 } },
+              },
+              tooltip: { mode: 'index', intersect: false },
+            },
+            scales: {
+              y: {
+                position: 'left',
+                ticks: { color: '#475569' },
+                grid: { color: '#e2e8f0' },
+              },
+              y1: {
+                position: 'right',
+                grid: { drawOnChartArea: false },
+                ticks: { color: '#94a3b8' },
+              },
+            },
+          }),
+          [],
+        )
+
+        return (
+          <Card title="Fund NAV Time Series" subtitle="Dataset: fund_parsed_data.csv">
+            <div className="sample-artifact sample-artifact--split">
+              <div className="sample-artifact__aside">
+                <p className="sample-label">Latest NAV / Unit</p>
+                <p className="sample-stat">{latestNav != null ? latestNav.toFixed(4) : '—'}</p>
+                {delta != null && (
+                  <p className={['sample-delta', delta >= 0 ? 'is-positive' : 'is-negative'].join(' ')}>
+                    {delta >= 0 ? '+' : ''}
+                    {delta.toFixed(4)} ({deltaPct != null ? deltaPct.toFixed(2) : '0.00'}% vs. prev)
+                  </p>
+                )}
+                <p className="sample-helper-text">Time-series built from NAV per unit/total plus sale and repurchase prices.</p>
+                <div className="sample-tab-bar">
+                  {['30', '90', '180', '365', 'all'].map((opt) => (
+                    <TabButton key={opt} id={opt} activeId={windowSize} onClick={setWindowSize}>
+                      {opt === 'all' ? 'All' : `${opt} days`}
+                    </TabButton>
+                  ))}
+                </div>
+                <p className="sample-caption">Use this view to follow one fund over time. Toggle the window for short or long-term focus.</p>
+              </div>
+        <div className="sample-artifact__visual sample-artifact__visual--tall">
+          {sliced.length ? (
+            <div className="sample-chart sample-chart--fill">
+              <ChartCanvas type="line" data={historyChartData} options={historyChartOptions} />
+            </div>
+          ) : (
+            <div className="sample-placeholder">Waiting for fund_parsed_data.csv …</div>
+          )}
+        </div>
+            </div>
+          </Card>
+        )
+      }
+
+      const LatestFundsArtifact = ({ data }) => {
+        const [metric, setMetric] = useState('nav_per_unit')
+
+        const cleaned = useMemo(() => {
+          if (!data.length) return []
+          return data
+            .filter((row) => row.fund_id || row['fund_id'] || row.fund || row['Fund'])
+            .map((row) => ({
+              ...row,
+              nav_per_unit_num: parseNumericValue(row.nav_per_unit ?? row['nav_per_unit']),
+              nav_total_num: parseNumericValue(row.nav_total ?? row['nav_total']),
+              units_outstanding_num: parseNumericValue(row.units_outstanding ?? row['units_outstanding']),
+              sale_price_num: parseNumericValue(row.sale_price ?? row['sale_price']),
+              repurchase_price_num: parseNumericValue(row.repurchase_price ?? row['repurchase_price']),
+            }))
+        }, [data])
+
+        const metricLabelMap = {
+          nav_per_unit: 'NAV / unit',
+          nav_total: 'NAV total',
+          units_outstanding: 'Units outstanding',
+        }
+
+        const metricKeyMap = {
+          nav_per_unit: 'nav_per_unit_num',
+          nav_total: 'nav_total_num',
+          units_outstanding: 'units_outstanding_num',
+        }
+
+        const metricKey = metricKeyMap[metric]
+
+        const rankedRows = useMemo(() => {
+          return cleaned
+            .filter((row) => row[metricKey] != null)
+            .sort((a, b) => ((b[metricKey] ?? 0) || 0) - ((a[metricKey] ?? 0) || 0))
+        }, [cleaned, metricKey])
+
+        const totalNav = useMemo(
+          () => rankedRows.reduce((sum, row) => sum + (row.nav_total_num ?? 0), 0),
+          [rankedRows],
+        )
+
+        const barChartData = useMemo(() => {
+          if (!rankedRows.length) {
+            return { labels: [], datasets: [] }
+          }
+          return {
+            labels: rankedRows.map((row) => row.fund_id ?? row['fund_id'] ?? row.fund ?? row['Fund']),
+            datasets: [
+              {
+                label: metricLabelMap[metric],
+                data: rankedRows.map((row) => row[metricKey] ?? 0),
+                backgroundColor: '#5c48ff',
+                borderRadius: 6,
+              },
+            ],
+          }
+        }, [metric, metricKey, metricLabelMap, rankedRows])
+
+        const barChartOptions = useMemo(
+          () => ({
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: { mode: 'index', intersect: false },
+            },
+            scales: {
+              x: {
+                ticks: { color: '#5b6280', maxRotation: 60, minRotation: 60, autoSkip: false },
+                grid: { display: false },
+              },
+              y: {
+                ticks: { color: '#5b6280' },
+                grid: { color: '#e2e8f0' },
+              },
+            },
+          }),
+          [],
+        )
+
+        const pieRows = useMemo(() => rankedRows.slice(0, 6), [rankedRows])
+        const pieColors = ['#5c48ff', '#7c3aed', '#0ea5e9', '#f97316', '#10b981', '#facc15', '#f472b6', '#94a3b8']
+
+        const pieChartData = useMemo(() => {
+          if (!pieRows.length) return { labels: [], datasets: [] }
+          return {
+            labels: pieRows.map((row) => row.fund_id ?? row['fund_id'] ?? row.fund ?? row['Fund']),
+            datasets: [
+              {
+                data: pieRows.map((row) => row.nav_total_num ?? 0),
+                backgroundColor: pieRows.map((_, idx) => pieColors[idx % pieColors.length]),
+                borderWidth: 0,
+              },
+            ],
+          }
+        }, [pieRows])
+
+        const pieChartOptions = useMemo(
+          () => ({
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: (ctx) => {
+                    const value = ctx.parsed ?? 0
+                    return `${ctx.label}: ${value.toLocaleString()}`
+                  },
+                },
+              },
+            },
+            cutout: '55%',
+          }),
+          [],
+        )
+
+        const topShare = useMemo(() => {
+          if (!pieRows.length || !totalNav) return null
+          return ((pieRows[0].nav_total_num ?? 0) / totalNav) * 100
+        }, [pieRows, totalNav])
+        const formattedTopShare = Number.isFinite(topShare) ? topShare : null
+
+        return (
+          <Card title="Fund Snapshot Comparator" subtitle="Dataset: latest_funds_data.csv">
+            <div className="sample-artifact">
+              <div className="sample-artifact__aside sample-artifact__aside--stacked">
+                <p className="sample-description">Compare funds on a single metric using the latest available CSV snapshot.</p>
+                <div>
+                  <p className="sample-label">Metric</p>
+              <div className="sample-tab-bar">
+                {Object.keys(metricLabelMap).map((key) => (
+                  <TabButton key={key} id={key} activeId={metric} onClick={setMetric}>
+                    {metricLabelMap[key]}
+                  </TabButton>
+                ))}
+              </div>
+            </div>
+            <p className="sample-caption">Bar heights follow the active metric, while the table retains the rest of the context.</p>
+          </div>
+          <div className="sample-artifact__visual sample-latest-visual">
+            <div className="sample-subcard sample-subcard--full">
+              <p className="sample-label">Metric distribution</p>
+              <div className="sample-chart sample-chart--wide">
+                {rankedRows.length ? (
+                  <ChartCanvas type="bar" data={barChartData} options={barChartOptions} />
+                ) : (
+                  <div className="sample-placeholder">Waiting for latest_funds_data.csv …</div>
+                )}
+              </div>
+            </div>
+            <div className="sample-latest-lower">
+              <div className="sample-subcard sample-subcard--fixed">
+                <p className="sample-label">NAV share · top 6</p>
+                <p className="sample-caption">Share of total NAV captured by each leading fund.</p>
+                <div className="sample-pie-chart">
+                  {pieRows.length ? (
+                    <ChartCanvas type="doughnut" data={pieChartData} options={pieChartOptions} />
+                  ) : (
+                    <div className="sample-placeholder">Waiting for NAV totals …</div>
+                  )}
+                </div>
+                <ul className="sample-pie-legend">
+                  {pieRows.map((row, idx) => {
+                    const fundLabel = row.fund_id ?? row['fund_id'] ?? row.fund ?? row['Fund']
+                    const share = totalNav ? ((row.nav_total_num ?? 0) / totalNav) * 100 : 0
+                    return (
+                      <li key={`${fundLabel || 'fund'}-${idx}`}>
+                        <span style={{ backgroundColor: pieColors[idx % pieColors.length] }} />
+                        <span>{fundLabel}</span>
+                        <strong>{share.toFixed(1)}%</strong>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+              <div className="sample-subcard sample-subcard--flex sample-table-subcard ">
+                <p className="sample-label">LATEST FUNDS SNAPSHOT</p>
+                <div className="sample-table-wrapper">
+                  <table className="sample-table">
+                    <thead>
+                      <tr>
+                        <th>Fund</th>
+                        <th>NAV / unit</th>
+                        <th>NAV total</th>
+                        <th>Units</th>
+                        <th>Sale</th>
+                        <th>Repurchase</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {cleaned.map((row, idx) => {
+                        const fundLabel = row.fund_id ?? row['fund_id'] ?? row.fund ?? row['Fund']
+                        const rowKey = `${fundLabel || 'fund'}-${idx}`
+                        return (
+                          <tr key={rowKey}>
+                            <td>{fundLabel}</td>
+                            <td>{typeof row.nav_per_unit_num === 'number' ? row.nav_per_unit_num.toFixed(4) : '—'}</td>
+                            <td>
+                              {typeof row.nav_total_num === 'number'
+                                ? row.nav_total_num.toLocaleString(undefined, { maximumFractionDigits: 0 })
+                                : '—'}
+                            </td>
+                            <td>
+                              {typeof row.units_outstanding_num === 'number'
+                                ? row.units_outstanding_num.toLocaleString(undefined, { maximumFractionDigits: 0 })
+                                : '—'}
+                            </td>
+                            <td>{typeof row.sale_price_num === 'number' ? row.sale_price_num.toFixed(4) : '—'}</td>
+                            <td>{typeof row.repurchase_price_num === 'number' ? row.repurchase_price_num.toFixed(4) : '—'}</td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+            </div>
+          </Card>
+        )
+      }
+
+      const FundsOverviewArtifact = ({ data }) => {
+        const [search, setSearch] = useState('')
+        const [category, setCategory] = useState('all')
+
+        const cleaned = useMemo(() => {
+          if (!data.length) return []
+          return data.filter((row) => row['Fund'] || row['Fund Name'] || row.fund_id || row['fund_id'])
+        }, [data])
+
+        const categories = useMemo(() => {
+          const set = new Set()
+          cleaned.forEach((row) => {
+            const cat = row['Fund Category'] ?? row.Category ?? row.Structure
+            if (cat) set.add(cat)
+          })
+          return Array.from(set).sort((a, b) => String(a).localeCompare(String(b)))
+        }, [cleaned])
+
+        const filtered = useMemo(() => {
+          return cleaned.filter((row) => {
+            const name = String(row['Fund'] ?? row['Fund Name'] ?? '').toLowerCase()
+            const id = String(row.fund_id ?? row['Fund ID'] ?? '').toLowerCase()
+            const manager = String(row.Manager ?? row['Fund Manager'] ?? '').toLowerCase()
+            const query = search.toLowerCase()
+            const cat = row['Fund Category'] ?? row.Category ?? row.Structure
+            const passesSearch = !query || name.includes(query) || id.includes(query) || manager.includes(query)
+            const passesCategory = category === 'all' || !category ? true : cat === category
+            return passesSearch && passesCategory
+          })
+        }, [cleaned, search, category])
+
+        const fundCards = filtered.map((row, index) => {
+          const fundId = row.fund_id ?? row['Fund ID'] ?? row['Fund']
+          const fundName = row['Fund'] ?? row['Fund Name'] ?? row.fund_id
+          const categoryLabel = row['Fund Category'] ?? row.Category ?? row.Structure
+          const cardKey = `${fundId || 'fund'}-${index}`
+          return (
+            <div className="sample-fund-card" key={cardKey}>
+              <p className="sample-fund-id">{fundId}</p>
+              <h3 className="sample-fund-name">{fundName}</h3>
+              <div className="sample-pill-row">
+                {categoryLabel && <span className="sample-pill">{categoryLabel}</span>}
+                {row['Asset Class Tilt'] && <span className="sample-pill">{row['Asset Class Tilt']}</span>}
+              </div>
+              <ul className="sample-fund-meta">
+                {(row.Manager ?? row['Fund Manager']) && (
+                  <li>
+                    <strong>Manager:</strong> {row.Manager ?? row['Fund Manager']}
+                  </li>
+                )}
+                {row['Liquidity Window'] && (
+                  <li>
+                    <strong>Liquidity:</strong> {row['Liquidity Window']}
+                  </li>
+                )}
+                {row.Benchmark && (
+                  <li>
+                    <strong>Benchmark:</strong> {row.Benchmark}
+                  </li>
+                )}
+                {(row['Management Fee'] ?? row['Management Fee (%)']) && (
+                  <li>
+                    <strong>Fee:</strong> {row['Management Fee'] ?? row['Management Fee (%)']}
+                  </li>
+                )}
+                {row['Front/Exit Load'] && (
+                  <li>
+                    <strong>Front/Exit:</strong> {row['Front/Exit Load']}
+                  </li>
+                )}
+                {row.Notes && (
+                  <li>
+                    <strong>Notes:</strong> {row.Notes}
+                  </li>
+                )}
+              </ul>
+              {row['Offer Link'] && (
+                <a className="sample-link" href={row['Offer Link']} target="_blank" rel="noreferrer">
+                  View offer / factsheet
+                </a>
+              )}
+            </div>
+          )
+        })
+
+        return (
+          <Card title="Fund Catalogue Explorer" subtitle="Dataset: funds_overview.csv">
+            <div className="sample-artifact sample-artifact--column">
+              <div className="sample-filter-row">
+                <label className="sample-field">
+                  <span>Search</span>
+                  <input type="text" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Name, ID, manager…" />
+                </label>
+                <label className="sample-field">
+                  <span>Category</span>
+                  <select value={category} onChange={(event) => setCategory(event.target.value)}>
+                    <option value="all">All categories</option>
+                    {categories.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <p className="sample-caption">Each card highlights manager, fees, and liquidity notes. Use the filters to locate similar offerings.</p>
+              <div className="sample-card-grid">
+                {fundCards.length > 0 ? (
+                  fundCards
+                ) : (
+                  <div className="sample-placeholder">No funds match the current filters.</div>
+                )}
+              </div>
+            </div>
+          </Card>
+        )
+      }
+
+      const TZFundsCanvasApp = () => {
+        const [activeTab, setActiveTab] = useState('history')
+        const [fundHistory, setFundHistory] = useState([])
+        const [latestFunds, setLatestFunds] = useState([])
+        const [fundsOverview, setFundsOverview] = useState([])
+
+        useEffect(() => {
+          const loadFromString = (kind, csvString) => {
+            Papa.parse(csvString, {
+              header: true,
+              dynamicTyping: true,
+              skipEmptyLines: 'greedy',
+              complete: (results) => {
+                if (!Array.isArray(results.data)) return
+                const rows = sanitizeRows(results.data)
+                if (kind === 'fundHistory') setFundHistory(rows)
+                if (kind === 'latestFunds') setLatestFunds(rows)
+                if (kind === 'fundsOverview') setFundsOverview(rows)
+              },
+            })
+          }
+
+          Object.entries(CSV_DATA).forEach(([kind, csvString]) => loadFromString(kind, csvString))
+        }, [])
+
+        const handleCsvUpload = (kind) => (event) => {
+          const file = event.target.files?.[0]
+          if (!file) return
+          Papa.parse(file, {
+            header: true,
+            dynamicTyping: true,
+            skipEmptyLines: 'greedy',
+            complete: (results) => {
+              if (!Array.isArray(results.data)) return
+              const rows = sanitizeRows(results.data)
+              if (kind === 'fundHistory') setFundHistory(rows)
+              if (kind === 'latestFunds') setLatestFunds(rows)
+              if (kind === 'fundsOverview') setFundsOverview(rows)
+            },
+            error: (error) => {
+              console.error('Failed to parse uploaded CSV', error)
+            },
+          })
+        }
+
+        return (
+          <div className="sample-page">
+            <div className="sample-page__inner">
+              <header className="sample-hero">
+                <div>
+                  <p className="sample-eyebrow">TZ CIS dashboard</p>
+                  <h1>TZ Funds Canvas · Sample Artifacts</h1>
+                  <p>
+                    Three self-contained artifacts showcasing fund time-series, a latest snapshot comparator, and a catalogue explorer.
+                    Change the CSVs below to explore other funds without any build tooling.
+                  </p>
+                </div>
+                <div className="sample-hero__tabs">
+                  <TabButton id="history" activeId={activeTab} onClick={setActiveTab}>
+                    1 · Time Series
+                  </TabButton>
+                  <TabButton id="latest" activeId={activeTab} onClick={setActiveTab}>
+                    2 · Snapshot Comparator
+                  </TabButton>
+                  <TabButton id="overview" activeId={activeTab} onClick={setActiveTab}>
+                    3 · Catalogue Explorer
+                  </TabButton>
+                </div>
+              </header>
+
+              <Card title="Upload CSVs" subtitle="Override the bundled demo data" className="sample-upload-card">
+                <div className="sample-upload-grid">
+                  {CSV_UPLOADS.map((item) => (
+                    <label key={item.kind} className="sample-upload-field">
+                      <span className="sample-upload-label">
+                        <strong>{item.label}</strong>
+                        <small>{item.description}</small>
+                      </span>
+                      <input type="file" accept=".csv,text/csv" onChange={handleCsvUpload(item.kind)} />
+                    </label>
+                  ))}
+                </div>
+                <p className="sample-caption">Files are parsed directly in the browser via Papa.parse.</p>
+              </Card>
+
+              {activeTab === 'history' && <FundHistoryArtifact data={fundHistory} />}
+              {activeTab === 'latest' && <LatestFundsArtifact data={latestFunds} />}
+              {activeTab === 'overview' && <FundsOverviewArtifact data={fundsOverview} />}
+            </div>
+          </div>
+        )
+      }
+
+      ReactDOM.createRoot(document.getElementById('root')).render(<TZFundsCanvasApp />)
+    </script>
+  </body>
+</html>
