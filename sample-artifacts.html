@@ -415,21 +415,40 @@
 
       .sample-card-grid {
         display: grid;
-        gap: 1rem;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        max-height: 28rem;
-        overflow: auto;
-        padding-right: 0.5rem;
+        gap: clamp(1.25rem, 2vw, 2rem);
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        max-height: none;
+        overflow: visible;
+        padding-right: 0;
       }
 
       .sample-fund-card {
         border: 1px solid var(--color-border);
-        border-radius: 20px;
-        padding: 1rem;
-        background: linear-gradient(135deg, rgba(92, 72, 255, 0.08), rgba(15, 201, 196, 0.08));
+        border-radius: 22px;
+        padding: 1.25rem;
+        background: linear-gradient(135deg, rgba(92, 72, 255, 0.05), rgba(15, 201, 196, 0.08));
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
+        gap: 0.9rem;
+        box-shadow: 0 18px 35px -28px rgba(10, 23, 45, 0.55);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .sample-fund-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 30px 55px -35px rgba(10, 23, 45, 0.45);
+      }
+
+      .sample-fund-card__header {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+
+      .sample-fund-manager {
+        margin: 0;
+        font-size: 0.85rem;
+        color: var(--color-text-soft);
       }
 
       .sample-fund-id {
@@ -460,13 +479,78 @@
         background: rgba(255, 255, 255, 0.7);
       }
 
-      .sample-fund-meta {
-        list-style: none;
-        padding: 0;
-        margin: 0;
+      .sample-fund-card__stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 0.75rem;
+      }
+
+      .sample-fund-card__stat {
+        border-radius: 14px;
+        border: 1px solid rgba(92, 72, 255, 0.2);
+        padding: 0.65rem 0.75rem;
+        background: rgba(255, 255, 255, 0.75);
         display: flex;
         flex-direction: column;
-        gap: 0.25rem;
+        gap: 0.2rem;
+      }
+
+      .sample-fund-card__stat span {
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.7rem;
+        color: var(--color-text-soft);
+      }
+
+      .sample-fund-card__stat strong {
+        font-size: 1rem;
+        color: var(--color-text-strong);
+      }
+
+      .sample-fund-card__details {
+        border-radius: 16px;
+        border: 1px solid rgba(92, 72, 255, 0.12);
+        padding: 0.5rem 0.75rem;
+        background: rgba(255, 255, 255, 0.6);
+      }
+
+      .sample-fund-card__details summary {
+        cursor: pointer;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--color-text-muted);
+        font-weight: 600;
+        list-style: none;
+      }
+
+      .sample-fund-card__details[open] summary {
+        color: var(--color-primary-strong);
+      }
+
+      .sample-fund-card__details summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .sample-fund-card__details summary::after {
+        content: '▾';
+        margin-left: 0.4rem;
+        font-size: 0.75rem;
+        display: inline-block;
+        transition: transform 0.2s ease;
+      }
+
+      .sample-fund-card__details[open] summary::after {
+        transform: rotate(-180deg);
+      }
+
+      .sample-fund-meta {
+        list-style: none;
+        padding: 0.5rem 0 0;
+        margin: 0;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 0.4rem 0.75rem;
         font-size: 0.85rem;
       }
 
@@ -1303,47 +1387,57 @@ orbit.inuka,Orbit Money‑Market Fund (Inuka),https://orbit.co.tz/inuka-fund,htt
           const fundId = row.fund_id ?? row['Fund ID'] ?? row['Fund']
           const fundName = row['Fund'] ?? row['Fund Name'] ?? row.fund_id
           const categoryLabel = row['Fund Category'] ?? row.Category ?? row.Structure
+          const managerLabel = row.Manager ?? row['Fund Manager']
+          const liquidity = row['Liquidity Window']
+          const benchmark = row.Benchmark
+          const fee = row['Management Fee'] ?? row['Management Fee (%)']
+          const quickStats = [
+            fee ? { label: 'Mgmt fee', value: fee } : null,
+            liquidity ? { label: 'Liquidity', value: liquidity } : null,
+            benchmark ? { label: 'Benchmark', value: benchmark } : null,
+          ].filter((stat) => Boolean(stat && stat.value))
+
+          const detailEntries = [
+            { label: 'Custodian', value: row['Trustee/Custodian'] },
+            { label: 'Front/Exit', value: row['Front/Exit Load'] },
+            { label: 'ESG', value: row['ESG Policy'] },
+            { label: 'Notes', value: row.Notes },
+          ].filter((entry) => Boolean(entry.value))
+
           const cardKey = `${fundId || 'fund'}-${index}`
           return (
             <div className="sample-fund-card" key={cardKey}>
-              <p className="sample-fund-id">{fundId}</p>
-              <h3 className="sample-fund-name">{fundName}</h3>
+              <div className="sample-fund-card__header">
+                <p className="sample-fund-id">{fundId}</p>
+                <h3 className="sample-fund-name">{fundName}</h3>
+                {managerLabel && <p className="sample-fund-manager">Managed by {managerLabel}</p>}
+              </div>
               <div className="sample-pill-row">
                 {categoryLabel && <span className="sample-pill">{categoryLabel}</span>}
                 {row['Asset Class Tilt'] && <span className="sample-pill">{row['Asset Class Tilt']}</span>}
               </div>
-              <ul className="sample-fund-meta">
-                {(row.Manager ?? row['Fund Manager']) && (
-                  <li>
-                    <strong>Manager:</strong> {row.Manager ?? row['Fund Manager']}
-                  </li>
-                )}
-                {row['Liquidity Window'] && (
-                  <li>
-                    <strong>Liquidity:</strong> {row['Liquidity Window']}
-                  </li>
-                )}
-                {row.Benchmark && (
-                  <li>
-                    <strong>Benchmark:</strong> {row.Benchmark}
-                  </li>
-                )}
-                {(row['Management Fee'] ?? row['Management Fee (%)']) && (
-                  <li>
-                    <strong>Fee:</strong> {row['Management Fee'] ?? row['Management Fee (%)']}
-                  </li>
-                )}
-                {row['Front/Exit Load'] && (
-                  <li>
-                    <strong>Front/Exit:</strong> {row['Front/Exit Load']}
-                  </li>
-                )}
-                {row.Notes && (
-                  <li>
-                    <strong>Notes:</strong> {row.Notes}
-                  </li>
-                )}
-              </ul>
+              {quickStats.length ? (
+                <div className="sample-fund-card__stats">
+                  {quickStats.map((stat) => (
+                    <div key={`${cardKey}-${stat.label}`} className="sample-fund-card__stat">
+                      <span>{stat.label}</span>
+                      <strong>{stat.value}</strong>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+              {detailEntries.length ? (
+                <details className="sample-fund-card__details">
+                  <summary>Key notes</summary>
+                  <ul className="sample-fund-meta">
+                    {detailEntries.map((entry) => (
+                      <li key={`${cardKey}-${entry.label}`}>
+                        <strong>{entry.label}:</strong> {entry.value}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              ) : null}
               {row['Offer Link'] && (
                 <a className="sample-link" href={row['Offer Link']} target="_blank" rel="noreferrer">
                   View offer / factsheet
