@@ -507,11 +507,40 @@
         color: var(--color-text-strong);
       }
 
+      .sample-fund-card__stat small {
+        font-size: 0.75rem;
+        color: var(--color-text-muted);
+      }
+
+      .sample-fund-card__benchmark {
+        border-radius: 16px;
+        border: 1px solid rgba(92, 72, 255, 0.15);
+        padding: 0.75rem;
+        background: rgba(255, 255, 255, 0.7);
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+
+      .sample-fund-card__benchmark span {
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.7rem;
+        color: var(--color-text-soft);
+      }
+
+      .sample-fund-card__benchmark strong {
+        font-size: 0.95rem;
+        color: var(--color-text-strong);
+      }
+
       .sample-fund-card__details {
         border-radius: 16px;
         border: 1px solid rgba(92, 72, 255, 0.12);
         padding: 0.5rem 0.75rem;
         background: rgba(255, 255, 255, 0.6);
+        margin-top: 1rem;
+        border-top: 1px solid var(--color-border);
       }
 
       .sample-fund-card__details summary {
@@ -552,6 +581,33 @@
         grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
         gap: 0.4rem 0.75rem;
         font-size: 0.85rem;
+      }
+
+      .sample-fund-card__links {
+        margin-top: auto;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      .sample-fund-card__links a {
+        flex: 1;
+        min-width: 120px;
+        text-align: center;
+        border: 1px solid rgba(92, 72, 255, 0.3);
+        border-radius: 999px;
+        padding: 0.4rem 0.65rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--color-primary-strong);
+        text-decoration: none;
+        background: rgba(92, 72, 255, 0.08);
+        transition: background 0.2s ease, color 0.2s ease;
+      }
+
+      .sample-fund-card__links a:hover {
+        background: var(--color-primary);
+        color: #fff;
       }
 
       .sample-fund-meta strong {
@@ -1383,6 +1439,31 @@ orbit.inuka,Orbit Money‑Market Fund (Inuka),https://orbit.co.tz/inuka-fund,htt
           })
         }, [cleaned, search, category])
 
+        const parseFee = (raw) => {
+          if (!raw) return null
+          const match = String(raw).match(/(\d+(?:\.\d+)?)\s*%/)
+          if (!match) {
+            return { headline: raw, helper: null }
+          }
+          const headline = `${match[1]}%`
+          const helper = String(raw).replace(match[0], '').replace(/^[\s;,:-]+/, '').trim()
+          return { headline, helper: helper || null }
+        }
+
+        const parseLiquidity = (raw) => {
+          if (!raw) return null
+          const text = String(raw)
+          const tMatch = text.match(/T\+(\d+)/i)
+          const dayMatch = text.match(/(\d+)\s*(?:business|working)?\s*day/i)
+          if (tMatch) {
+            return { headline: `T+${tMatch[1]} days`, helper: text }
+          }
+          if (dayMatch) {
+            return { headline: `T+${dayMatch[1]} days`, helper: text }
+          }
+          return { headline: text, helper: null }
+        }
+
         const fundCards = filtered.map((row, index) => {
           const fundId = row.fund_id ?? row['Fund ID'] ?? row['Fund']
           const fundName = row['Fund'] ?? row['Fund Name'] ?? row.fund_id
@@ -1391,18 +1472,26 @@ orbit.inuka,Orbit Money‑Market Fund (Inuka),https://orbit.co.tz/inuka-fund,htt
           const liquidity = row['Liquidity Window']
           const benchmark = row.Benchmark
           const fee = row['Management Fee'] ?? row['Management Fee (%)']
+          const feeInfo = parseFee(fee)
+          const liquidityInfo = parseLiquidity(liquidity)
           const quickStats = [
-            fee ? { label: 'Mgmt fee', value: fee } : null,
-            liquidity ? { label: 'Liquidity', value: liquidity } : null,
-            benchmark ? { label: 'Benchmark', value: benchmark } : null,
+            feeInfo ? { label: 'Mgmt fee', value: feeInfo.headline, helper: feeInfo.helper } : null,
+            liquidityInfo ? { label: 'Liquidity', value: liquidityInfo.headline, helper: liquidityInfo.helper } : null,
           ].filter((stat) => Boolean(stat && stat.value))
 
           const detailEntries = [
+            { label: 'Asset tilt', value: row['Asset Class Tilt'] },
             { label: 'Custodian', value: row['Trustee/Custodian'] },
             { label: 'Front/Exit', value: row['Front/Exit Load'] },
             { label: 'ESG', value: row['ESG Policy'] },
             { label: 'Notes', value: row.Notes },
           ].filter((entry) => Boolean(entry.value))
+
+          const linkEntries = [
+            row['Manager Link'] ? { label: 'Manager', href: row['Manager Link'] } : null,
+            row['Fund Performance Link'] ? { label: 'Performance', href: row['Fund Performance Link'] } : null,
+            row['Offer Link'] ? { label: 'Offer letter', href: row['Offer Link'] } : null,
+          ].filter(Boolean)
 
           const cardKey = `${fundId || 'fund'}-${index}`
           return (
@@ -1414,7 +1503,6 @@ orbit.inuka,Orbit Money‑Market Fund (Inuka),https://orbit.co.tz/inuka-fund,htt
               </div>
               <div className="sample-pill-row">
                 {categoryLabel && <span className="sample-pill">{categoryLabel}</span>}
-                {row['Asset Class Tilt'] && <span className="sample-pill">{row['Asset Class Tilt']}</span>}
               </div>
               {quickStats.length ? (
                 <div className="sample-fund-card__stats">
@@ -1422,8 +1510,15 @@ orbit.inuka,Orbit Money‑Market Fund (Inuka),https://orbit.co.tz/inuka-fund,htt
                     <div key={`${cardKey}-${stat.label}`} className="sample-fund-card__stat">
                       <span>{stat.label}</span>
                       <strong>{stat.value}</strong>
+                      {stat.helper ? <small>{stat.helper}</small> : null}
                     </div>
                   ))}
+                </div>
+              ) : null}
+              {benchmark ? (
+                <div className="sample-fund-card__benchmark">
+                  <span>Benchmark</span>
+                  <strong>{benchmark}</strong>
                 </div>
               ) : null}
               {detailEntries.length ? (
@@ -1438,11 +1533,15 @@ orbit.inuka,Orbit Money‑Market Fund (Inuka),https://orbit.co.tz/inuka-fund,htt
                   </ul>
                 </details>
               ) : null}
-              {row['Offer Link'] && (
-                <a className="sample-link" href={row['Offer Link']} target="_blank" rel="noreferrer">
-                  View offer / factsheet
-                </a>
-              )}
+              {linkEntries.length ? (
+                <div className="sample-fund-card__links">
+                  {linkEntries.map((link) => (
+                    <a key={`${cardKey}-${link.label}`} href={link.href} target="_blank" rel="noreferrer">
+                      {link.label}
+                    </a>
+                  ))}
+                </div>
+              ) : null}
             </div>
           )
         })
