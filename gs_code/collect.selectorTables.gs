@@ -9,6 +9,7 @@ const CFG = {
   // header normalization
   NORM: (s) => String(s || '').toLowerCase().replace(/\s+/g,' ').replace(/[()]/g,'').trim()
 };
+const MAX_RECENT_ROWS = 3; // how many latest source rows to ingest per run
 /***** ============================================== *****/
 
 
@@ -53,66 +54,36 @@ function scrapeFromConfig() {
       const dateField = j.raw_date_columntitle;
       const dateIdx = mapping[dateField];
 
-      // find the row with the latest date (assumes ISO‑like format, e.g. YYYY-MM-DD)
-      let latestRow = null;
-      parsed.dataRows.forEach(row => {
-        const rawDate = row[dateIdx];
-        const normalized = normalizeDateString_(rawDate, j.date_hint);
-        // skip rows that aren't valid dates
-        if (!normalized || !/^\d{4}-\d{2}-\d{2}$/.test(normalized)) return;
-        if (!latestRow) {
-          latestRow = row;
-          latestRow.__normalizedDate = normalized;
-        } else if (normalized > latestRow.__normalizedDate) {
-          latestRow = row;
-          latestRow.__normalizedDate = normalized;
-        }
+      const recentRecords = collectRecentRecords_(parsed.dataRows, {
+        mapping,
+        expectedHeaders,
+        dateIdx,
+        dateHeaderName: j.raw_date_columntitle,
+        dateHint: j.date_hint,
+        limit: MAX_RECENT_ROWS
       });
 
-      if (!latestRow) {
-        logs.push(`✖ ${j.raw_sheetname}: unable to determine latest date`);
+      if (!recentRecords.length) {
+        logs.push(`✖ ${j.raw_sheetname}: unable to determine any recent dates`);
         continue;
       }
-
-      // Build record using the latest row
-      const record = {};
-      expectedHeaders.forEach(destName => {
-        const srcIdx = mapping[destName];
-        record[destName] = (latestRow[srcIdx] || '').toString().trim();
-      });
-      record['Scraped Time'] = isoNow_();
 
       const canonicalHeaders = expectedHeaders.concat(['Scraped Time']);
       const existingHeaders = getSheetHeaders_(j.raw_sheetname);
       const headersOrdered = mergeHeadersPreserving_(existingHeaders, canonicalHeaders);
       const dateHeaderName = j.raw_date_columntitle || 'Date';
-      const dateHeaderNorm = CFG.NORM(dateHeaderName);
-      const normalizedRecord = Object.fromEntries(Object.keys(record).map(k => [CFG.NORM(k), record[k]]));
-      const normalizedDate = normalizeDateString_(record[dateHeaderName], j.date_hint);
-      let jsDate = record[dateHeaderName];
-      if (normalizedDate && /^\d{4}-\d{2}-\d{2}$/.test(normalizedDate)) {
-        const [y, m, d] = normalizedDate.split('-').map(Number);
-        jsDate = new Date(y, m - 1, d);
-      }
-      const rowValues = headersOrdered.map(h => {
-        const norm = CFG.NORM(h);
-        if (norm === dateHeaderNorm) return jsDate;
-        return normalizedRecord[norm] != null ? normalizedRecord[norm] : '';
-      });
       const dateFormat = j.date_display_format || chooseDateDisplayFormat_(null, j.date_hint);
 
-      const result = writeLatestRow_({
+      const result = upsertRecentRows_({
         sheetName: j.raw_sheetname,
         headers: headersOrdered,
-        rowValues,
-        dateHint: 'YYYY-MM-DD',
-        dateHeader: /^date\b/i,
-        scrapedHeader: /^scraped time\b/i,
+        records: recentRecords,
+        dateHeaderName,
+        dateHint: j.date_hint,
         dateFormat,
-        timezone: CFG.TIMEZONE,
-        numericTolerance: 0
+        timezone: CFG.TIMEZONE
       });
-      logs.push(`✔ ${j.raw_sheetname}: ${result} latest row (${record[dateHeaderName]})`);
+      logs.push(`✔ ${j.raw_sheetname}: inserted ${result.inserted}, skipped ${result.skipped} (recent window)`);
     } catch (e) {
       logs.push(`✖ ${j.raw_sheetname}: ${e.message}`);
     }
@@ -419,6 +390,137 @@ function mergeHeadersPreserving_(existing, canonical) {
     seen.add(norm);
   });
   return out;
+}
+
+
+/***** ================== RECENT ROW HELPERS ================== *****/
+
+// Collect up to {limit} most recent unique-date records from the parsed table
+function collectRecentRecords_(rows, opts) {
+  if (!rows || !rows.length) return [];
+  const {
+    mapping,
+    expectedHeaders,
+    dateIdx,
+    dateHint,
+    limit = MAX_RECENT_ROWS
+  } = opts || {};
+  if (!mapping || typeof dateIdx !== 'number') return [];
+
+  const seenDates = new Set();
+  const out = [];
+  for (const row of rows) {
+    const rawDate = row[dateIdx];
+    const normalized = normalizeDateString_(rawDate, dateHint);
+    if (!normalized || !/^\d{4}-\d{2}-\d{2}$/.test(normalized)) continue;
+    if (seenDates.has(normalized)) continue;
+
+    const record = {};
+    (expectedHeaders || []).forEach(destName => {
+      const srcIdx = mapping[destName];
+      record[destName] = (row[srcIdx] || '').toString().trim();
+    });
+    record['Scraped Time'] = isoNow_();
+    record.__isoDate = normalized;
+
+    out.push(record);
+    seenDates.add(normalized);
+    if (out.length >= limit) break;
+  }
+
+  out.sort((a, b) => b.__isoDate.localeCompare(a.__isoDate));
+  return out.slice(0, limit);
+}
+
+// Insert new dated rows (newest-first) if they are missing in RAW
+function upsertRecentRows_(opts) {
+  const {
+    sheetName,
+    headers,
+    records,
+    dateHeaderName,
+    dateHint,
+    dateFormat,
+    timezone
+  } = opts || {};
+
+  if (!sheetName) throw new Error('upsertRecentRows_: sheetName required');
+  if (!Array.isArray(headers) || !headers.length) throw new Error('upsertRecentRows_: headers required');
+  if (!Array.isArray(records) || !records.length) return { inserted: 0, skipped: 0 };
+
+  const rawSS = SpreadsheetApp.openById(RAW_SS_ID);
+  const width = headers.length;
+  const sh = rawSS.getSheetByName(sheetName) || rawSS.insertSheet(sheetName);
+
+  // Ensure header
+  const headerNorm = headers.map(CFG.NORM);
+  const existingHeader = sh.getRange(1, 1, 1, width).getValues()[0];
+  const matches = existingHeader.length === width &&
+    existingHeader.every((v, i) => CFG.NORM(v) === headerNorm[i]);
+  if (!matches) {
+    sh.getRange(1, 1, 1, width).setValues([headers]);
+  }
+
+  // Locate date column
+  const dateNorm = CFG.NORM(dateHeaderName || 'date');
+  const dateCol = headerNorm.findIndex(h => h === dateNorm || h.indexOf(dateNorm) === 0);
+  if (dateCol < 0) throw new Error('upsertRecentRows_: unable to locate Date column');
+
+  // Existing dates set
+  const existingDates = new Set();
+  const lastRow = sh.getLastRow();
+  if (lastRow >= 2) {
+    const colVals = sh.getRange(2, dateCol + 1, lastRow - 1, 1).getValues();
+    colVals.forEach(v => {
+      const cell = v[0];
+      let iso = '';
+      if (Object.prototype.toString.call(cell) === '[object Date]' && !isNaN(cell)) {
+        iso = Utilities.formatDate(cell, timezone || CFG.TIMEZONE, 'yyyy-MM-dd');
+      } else {
+        iso = normalizeDateString_(cell, dateHint);
+      }
+      if (iso && /^\d{4}-\d{2}-\d{2}$/.test(iso)) existingDates.add(iso);
+    });
+  }
+
+  const rowsToInsert = [];
+  let inserted = 0;
+  let skipped = 0;
+  const fmt = dateFormat || chooseDateDisplayFormat_(null, dateHint);
+
+  records.forEach(rec => {
+    const iso = rec.__isoDate;
+    if (!iso) { skipped++; return; }
+    if (existingDates.has(iso)) { skipped++; return; }
+
+    const clone = Object.assign({}, rec);
+    delete clone.__isoDate;
+    const normalizedRecord = Object.fromEntries(
+      Object.keys(clone).map(k => [CFG.NORM(k), clone[k]])
+    );
+    const jsDate = (() => {
+      const parts = iso.split('-').map(Number);
+      return new Date(parts[0], parts[1] - 1, parts[2]);
+    })();
+
+    const rowValues = headers.map(h => {
+      const norm = CFG.NORM(h);
+      if (norm === dateNorm) return jsDate;
+      return normalizedRecord[norm] != null ? normalizedRecord[norm] : '';
+    });
+
+    rowsToInsert.push(rowValues);
+    existingDates.add(iso);
+    inserted++;
+  });
+
+  if (rowsToInsert.length) {
+    sh.insertRows(2, rowsToInsert.length);
+    sh.getRange(2, 1, rowsToInsert.length, width).setValues(rowsToInsert);
+    sh.getRange(2, dateCol + 1, rowsToInsert.length, 1).setNumberFormat(fmt);
+  }
+
+  return { inserted, skipped };
 }
 
 

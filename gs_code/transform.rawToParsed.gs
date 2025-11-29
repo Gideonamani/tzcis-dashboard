@@ -7,6 +7,7 @@ const RAW_SS_ID     = '11YdBfyArmS3V2l2-oSwkyFeuzW1lKvzgPQIg5Sihfog';
 const PARSED_SS_ID  = '1zoxwNR8OZUvNwd6NOvJhtWu8-DiWvPkTrpZ_DzWecUM';
 const CONFIG_SHEET  = '_config';
 const MAX_RUN_MS    = 5 * 60 * 1000; // soft ceiling
+const FAST_PATH_ROWS = 5;            // number of RAW rows to scan in fast path
 
 /***** PARSED SCHEMA ***********************************************************/
 const CANON_HEADER = [
@@ -17,6 +18,7 @@ const CANON_HEADER = [
 /***** ORCHESTRATOR ************************************************************/
 function processAllFunds(opts) {
   const fullScan = !!(opts && opts.fullScan);
+  const targetIds = normalizeFundIdList_(opts && opts.fundIds);
   const t0 = Date.now();
   const rawSS    = SpreadsheetApp.openById(RAW_SS_ID);
   const parsedSS = SpreadsheetApp.openById(PARSED_SS_ID);
@@ -28,6 +30,7 @@ function processAllFunds(opts) {
 
   for (const c of cfgRows) {
     if ((Date.now() - t0) > MAX_RUN_MS) { Logger.log('Time ceiling hit.'); break; }
+    if (targetIds.size && !targetIds.has(String(c.fund_id))) continue;
     try {
       const pre = preflightFund_(c, rawSS);
       if (!pre.ok) {
@@ -60,8 +63,17 @@ function processAllFunds(opts) {
  * Manual helper for the GUI: forces a full sweep over every RAW row so the
  * parser can re-check older data (useful after onboarding a fund).
  */
-function processAllFundsFullScan() {
-  processAllFunds({ fullScan: true });
+function processAllFundsFullScan(fundIds) {
+  processAllFunds({ fullScan: true, fundIds });
+}
+
+/**
+ * Targeted helper: process only the provided fund_id(s).
+ * Accepts a single fund_id or an array of fund_ids.
+ */
+function processFunds(fundIds, opts) {
+  const extra = opts || {};
+  processAllFunds({ fullScan: !!extra.fullScan, fundIds });
 }
 
 /***** PREFLIGHT ***************************************************************/
@@ -128,8 +140,7 @@ function newLinesParse(c, rawSS, parsedSS, opts) {
 
   const header = rawSh.getRange(1,1,1,lastCol).getValues()[0].map(h => String(h||''));
   if (!forceFullScan) {
-    const topRow = rawSh.getRange(2,1,1,lastCol).getValues()[0];
-    const fast = tryFastRowIncrement_(c, header, topRow, ps, { maxDate, existing });
+    const fast = tryFastBatchIncrement_(c, header, rawSh, ps, { maxDate, existing }, FAST_PATH_ROWS);
     if (fast.handled) return fast.result;
   }
 
@@ -162,6 +173,63 @@ function newLinesParse(c, rawSS, parsedSS, opts) {
   ensureParsedSortedAndUnique_(ps); // enforce invariant
 
   return { appended: newer.length, maxDate };
+}
+
+function tryFastBatchIncrement_(c, header, rawSh, ps, state, maxRows) {
+  const totalBodyRows = Math.max(0, rawSh.getLastRow() - 1);
+  const rowsToCheck = Math.min(
+    totalBodyRows,
+    Math.max(1, Number(maxRows) || 1)
+  );
+  if (rowsToCheck === 0) {
+    return { handled: false };
+  }
+
+  const block = rawSh.getRange(2, 1, rowsToCheck, rawSh.getLastColumn()).getValues();
+  const hint = (c.date_hint || 'DMY').toUpperCase();
+  const maxDate = state && state.maxDate ? state.maxDate : '';
+  const existing = (state && state.existing) || new Set();
+
+  const newer = [];
+  const pendingDates = [];
+  let sawOlderOrEqual = false;
+
+  for (let i = 0; i < block.length; i++) {
+    const row = block[i];
+    const dateISO = parseDate_(getCellByTitle_(row, header, c.raw_date_columntitle), hint);
+    if (!dateISO) continue;
+
+    if (existing.has(dateISO)) {
+      if (!maxDate || dateISO > maxDate) continue;
+      sawOlderOrEqual = true;
+      break;
+    }
+    if (maxDate && dateISO < maxDate) {
+      sawOlderOrEqual = true;
+      break;
+    }
+
+    const canon = buildCanonRow_(c, header, row);
+    if (canon) {
+      newer.push(canon);
+      pendingDates.push(dateISO);
+    }
+  }
+
+  const scannedAll = rowsToCheck === totalBodyRows;
+  const incompleteWindow = !sawOlderOrEqual && !scannedAll;
+  if (incompleteWindow) {
+    return { handled: false };
+  }
+
+  if (newer.length) {
+    newer.sort((a,b)=> String(a[0]).localeCompare(String(b[0])));
+    appendCanonRows_(ps, newer);
+    pendingDates.forEach(d => existing.add(d));
+  }
+
+  const maxDateNew = newer.reduce((m, r) => (String(r[0]) > m ? String(r[0]) : m), maxDate);
+  return { handled: true, result: { appended: newer.length, maxDate: maxDateNew } };
 }
 
 function tryFastRowIncrement_(c, header, row, ps, state) {
@@ -465,6 +533,18 @@ function parseDate_(v, hint) {
   // Fallback: let JS parse then format in sheet TZ (avoids UTC roll-back)
   const d = new Date(String(v));
   return isNaN(d) ? null : Utilities.formatDate(d, getTZ_(), 'yyyy-MM-dd');
+}
+
+function normalizeFundIdList_(input) {
+  if (input == null) return new Set();
+  if (typeof input === 'string') {
+    const trimmed = input.trim();
+    return trimmed ? new Set([trimmed]) : new Set();
+  }
+  if (Array.isArray(input)) {
+    return new Set(input.map(v => String(v || '').trim()).filter(Boolean));
+  }
+  return new Set();
 }
 
 function num_(x) {
